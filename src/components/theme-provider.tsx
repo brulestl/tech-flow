@@ -35,10 +35,11 @@ export function ThemeProvider({
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     
-    const root = window.document.documentElement
-
+    // Safe access to document after window check
+    const root = typeof window !== "undefined" ? window.document.documentElement : null
+    
     const removeAttribute = () => {
-      root.removeAttribute(attribute)
+      root?.removeAttribute(attribute)
     }
 
     const setAttr = (attr: string) => {
@@ -46,16 +47,18 @@ export function ThemeProvider({
     }
 
     if (theme === "system" && enableSystem) {
-      const media = window.matchMedia("(prefers-color-scheme: dark)")
+      // Safe access to matchMedia after window check
+      const media = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null
       const listener = () => {
+        if (!media) return;
         const isDark = media.matches
         setAttr(isDark ? "dark" : "light")
       }
 
       listener()
-      media.addEventListener("change", listener)
+      media?.addEventListener("change", listener)
       return () => {
-        media.removeEventListener("change", listener)
+        media?.removeEventListener("change", listener)
         removeAttribute()
       }
     }
