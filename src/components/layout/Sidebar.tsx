@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,7 @@ import {
 export default function Sidebar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
-  const [collapsed, setCollapsed] = React.useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   
   const links = [
     { href: "/", icon: <Home size={20} />, label: "Home" },

@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 
@@ -9,7 +9,7 @@ export default function SearchBar() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ""
   
-  const [searchQuery, setSearchQuery] = React.useState(query)
+  const [searchQuery, setSearchQuery] = useState(query)
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

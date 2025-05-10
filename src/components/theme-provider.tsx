@@ -33,6 +33,8 @@ export function ThemeProvider({
   const [theme, setTheme] = React.useState<Theme>(defaultTheme)
 
   React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    
     const root = window.document.documentElement
 
     const removeAttribute = () => {

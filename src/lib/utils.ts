@@ -57,7 +57,9 @@ export function getFromStorage<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') return defaultValue;
   
   try {
-    const item = window.localStorage.getItem(`${STORAGE_PREFIX}${key}`);
+    // Safe access to localStorage after window check
+    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+    const item = storage?.getItem(`${STORAGE_PREFIX}${key}`);
     return item ? (JSON.parse(item) as T) : defaultValue;
   } catch (error) {
     console.error(`Error getting from storage: ${key}`, error);
@@ -69,7 +71,9 @@ export function setToStorage<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   
   try {
-    window.localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
+    // Safe access to localStorage after window check
+    const storage = typeof window !== 'undefined' ? window.localStorage : null;
+    storage?.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
   } catch (error) {
     console.error(`Error setting to storage: ${key}`, error);
   }
