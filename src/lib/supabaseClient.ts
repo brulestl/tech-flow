@@ -59,8 +59,8 @@ function createMock(): SupabaseClient<any, any, any> {
     },
   };
 
-  // @ts-expect-error — proxy only pretends to be SupabaseClient
-  return new Proxy({}, handler);
+  // Proxy pretends to be SupabaseClient but isn't fully type-compatible
+  return new Proxy({}, handler) as unknown as SupabaseClient<any, any, any>;
 }
 
 /* ------------------ export helpers ------------------ */
@@ -71,8 +71,10 @@ export const createBrowserClient = () => {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return createMock();
 
-  const { createBrowserSupabaseClient } = require('@supabase/auth-helpers-nextjs');
-  return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
+  // Import dynamically to avoid SSR issues
+  return import('@supabase/auth-helpers-nextjs').then(({ createBrowserSupabaseClient }) => {
+    return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
+  });
 };
 
 export const createServerClient = createMock;
