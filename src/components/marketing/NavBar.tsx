@@ -13,7 +13,7 @@ export default function NavBar() {
           ))}
         </nav>
         <Button asChild size="sm">
-          <a href="/login">Open App</a>
+          <a href="/home">Open App</a>
         </Button>
       </div>
     </header>
