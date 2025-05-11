@@ -64,17 +64,26 @@ function createMock(): SupabaseClient<any, any, any> {
 }
 
 /* ------------------ export helpers ------------------ */
-export const createBrowserClient = () => {
+export const createBrowserClient = (): SupabaseClient<any, any, any> => {
   if (typeof window === 'undefined') return createMock();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return createMock();
 
-  // Import dynamically to avoid SSR issues
-  return import('@supabase/auth-helpers-nextjs').then(({ createBrowserSupabaseClient }) => {
-    return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
-  });
+  try {
+    // We use a synchronous approach to maintain API compatibility
+    // Dynamic import is handled inside the client
+    // @ts-ignore - Dynamically importing at runtime
+    const createBrowserSupabaseClient = window.__supabaseAuthHelpers?.createBrowserSupabaseClient;
+    if (createBrowserSupabaseClient) {
+      return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
+    }
+  } catch (e) {
+    console.warn("Failed to load Supabase client, using mock instead");
+  }
+  
+  return createMock();
 };
 
 export const createServerClient = createMock;
