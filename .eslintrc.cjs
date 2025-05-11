@@ -13,7 +13,8 @@ const config = {
         "creatr"
     ],
     "globals": {
-        "React": "readonly"
+        "React": "readonly",
+        "Proxy": "readonly"
     },
     "settings": {
         "react": {
