@@ -1,9 +1,11 @@
 'use client';
 
-import React from "react"
+import React, { useState } from "react"
 import CollectionsGrid from "./CollectionsGrid"
 
 export default function CollectionsPage() {
+  const [open, setOpen] = useState(false);
+  
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
