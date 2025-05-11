@@ -1,5 +1,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Extend the Window interface to define our custom properties
+declare global {
+  interface Window {
+    __supabaseClient?: SupabaseClient<any, "public", any>;
+    __supabaseAuthHelpers?: {
+      createBrowserSupabaseClient?: (options: {
+        supabaseUrl: string;
+        supabaseKey: string;
+      }) => SupabaseClient<any, "public", any>;
+    };
+  }
+}
+
 /* ---------- helpers ---------- */
 type Ok<T = unknown> = Promise<{ data: T; error: null }>;
 const ok = <T = unknown>(data: T): Ok<T> => Promise.resolve({ data, error: null });
@@ -64,38 +77,45 @@ function createMock(): SupabaseClient<any, any, any> {
 /* ---------- exported helpers ---------- */
 // Create a synchronous client that won't cause TypeScript errors
 export const createBrowserClient = (): SupabaseClient<any, "public", any> => {
+  // Early return for server-side rendering
   if (typeof window === 'undefined') return createMock();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return createMock();
 
-  // Use existing client from window if available
-  if (typeof window !== 'undefined' && (window as any).__supabaseClient) {
-    return (window as any).__supabaseClient;
-  }
-
-  try {
-    // Use synchronous import instead of dynamic import to avoid Promise
-    // This works because we're preloading the module in LayoutClient.tsx
-    if (typeof window !== 'undefined' && 
-        (window as any).__supabaseAuthHelpers && 
-        (window as any).__supabaseAuthHelpers.createBrowserSupabaseClient) {
-      const client = (window as any).__supabaseAuthHelpers.createBrowserSupabaseClient({ 
-        supabaseUrl: url, 
-        supabaseKey: key 
-      });
-      // Cache the client
-      (window as any).__supabaseClient = client;
-      return client;
+  // All browser-specific code in this function
+  const createBrowserSupabase = () => {
+    // Use existing client from window if available
+    const existingClient = window.__supabaseClient as SupabaseClient<any, "public", any> | undefined;
+    if (existingClient) {
+      return existingClient;
     }
-    
-    // Fallback to mock
-    return createMock();
-  } catch (error) {
-    console.warn("Failed to create Supabase client, using mock instead", error);
-    return createMock();
-  }
+
+    try {
+      // Check if auth helpers module was preloaded
+      const helpers = window.__supabaseAuthHelpers;
+      if (helpers?.createBrowserSupabaseClient) {
+        const client = helpers.createBrowserSupabaseClient({
+          supabaseUrl: url,
+          supabaseKey: key
+        });
+        
+        // Cache the client
+        window.__supabaseClient = client;
+        return client;
+      }
+      
+      // Fallback to mock
+      return createMock();
+    } catch (error) {
+      console.warn("Failed to create Supabase client, using mock instead", error);
+      return createMock();
+    }
+  };
+
+  // Call the browser-specific function since we know window exists
+  return createBrowserSupabase();
 };
 
 export const createServerClient = createMock;
