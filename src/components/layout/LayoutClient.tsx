@@ -73,7 +73,6 @@ export default function LayoutClient({
       {isAuthPage ? (
         children
       ) : (
-        <RequireAuth>
           <div className="relative min-h-screen flex flex-col md:flex-row">
           {/* Desktop sidebar - hidden on mobile */}
           <div className="hidden md:flex">
@@ -101,7 +100,6 @@ export default function LayoutClient({
             </div>
           </div>
         </div>
-        </RequireAuth>
       )}
     </SessionContextProvider>
   );
