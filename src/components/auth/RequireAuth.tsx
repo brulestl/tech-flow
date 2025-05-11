@@ -3,11 +3,6 @@ import { useSession } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-function hasDemoAuth() {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('demoAuth') === '1';
-}
-
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const realSession = useSession();
   const router      = useRouter();
@@ -18,6 +13,11 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
 
   /* On mount: read demo flag once, then listen for storage events */
   useEffect(() => {
+    // Safe localStorage access only inside useEffect
+    const hasDemoAuth = () => {
+      return localStorage.getItem('demoAuth') === '1';
+    };
+    
     setDemo(hasDemoAuth());
     setChecked(true);                               // we've now checked localStorage
 
