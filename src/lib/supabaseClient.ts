@@ -1,5 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+// Add type declaration for the window.__supabaseAuthHelpers property
+declare global {
+  interface Window {
+    __supabaseAuthHelpers?: {
+      createBrowserSupabaseClient: (options: {
+        supabaseUrl: string;
+        supabaseKey: string;
+      }) => SupabaseClient<any, any, any>;
+    };
+  }
+}
+
 type Ok<T = unknown> = Promise<{ data: T; error: null; count?: number }>;
 const ok = <T = unknown>(data: T): Ok<T> => Promise.resolve({ data, error: null });
 
@@ -74,13 +86,17 @@ export const createBrowserClient = (): SupabaseClient<any, any, any> => {
   try {
     // We use a synchronous approach to maintain API compatibility
     // Dynamic import is handled inside the client
-    // Only access window properties when we know window is defined
-    if (typeof window !== 'undefined' && window.__supabaseAuthHelpers) {
-      // @ts-ignore - Dynamically importing at runtime
-      const createBrowserSupabaseClient = window.__supabaseAuthHelpers.createBrowserSupabaseClient;
-      if (createBrowserSupabaseClient) {
-        return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
-      }
+    if (typeof window === 'undefined') {
+      return createMock();
+    }
+    
+    // Safely access the window object now that we've confirmed it exists
+    const helpers = window.__supabaseAuthHelpers;
+    if (helpers && helpers.createBrowserSupabaseClient) {
+      return helpers.createBrowserSupabaseClient({ 
+        supabaseUrl: url, 
+        supabaseKey: key 
+      });
     }
   } catch (e) {
     console.warn("Failed to load Supabase client, using mock instead");
