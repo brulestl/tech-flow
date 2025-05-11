@@ -9,6 +9,7 @@ import MobileNavbar from "@/components/layout/MobileNavbar";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import StatsBar from "@/components/layout/StatsBar";
+import RequireAuth from "@/components/auth/RequireAuth";
 
 export default function LayoutClient({
   children,
