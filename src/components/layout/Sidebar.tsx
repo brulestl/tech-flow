@@ -35,8 +35,8 @@ export default function Sidebar() {
   ]
 
   const secondaryLinks = [
-    { href: "/bookmarks", icon: <Bookmark size={20} />, label: "Saved" },
-    { href: "/code", icon: <Code size={20} />, label: "Code Snippets" },
+    { href: "/saved", icon: <Bookmark size={20} />, label: "Saved" },
+    { href: "/code-snippets", icon: <Code size={20} />, label: "Code Snippets" },
     { href: "/settings", icon: <Settings size={20} />, label: "Settings" }
   ]
 

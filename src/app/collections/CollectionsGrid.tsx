@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import NewCollectionModal from "@/components/collections/NewCollectionModal"
 import { getFromStorage, Collection, generateMockData } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { 
@@ -15,6 +16,7 @@ import {
 
 export default function CollectionsGrid() {
   const [collections, setCollections] = useState<Collection[]>([])
+  const [open, setOpen] = useState(false)
   
   useEffect(() => {
     // Generate mock data if none exists
@@ -45,6 +47,7 @@ export default function CollectionsGrid() {
   
   return (
     <div>
+      <NewCollectionModal open={open} onOpenChange={setOpen} />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {collections.map((collection) => (
           <motion.div

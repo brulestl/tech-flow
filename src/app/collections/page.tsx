@@ -14,7 +14,7 @@ export default function CollectionsPage() {
           </p>
         </div>
         
-        <button className="btn btn-primary">
+        <button className="btn btn-primary" onClick={() => setOpen(true)}>
           New Collection
         </button>
       </div>

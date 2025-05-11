@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { UserProfile, getFromStorage, setToStorage, generateMockData } from "@/lib/utils"
 import { motion } from "framer-motion"
-import { User, Settings, Edit, Flame, Star, Calendar } from "lucide-react"
+import { User, Edit, Flame, Star, Calendar } from "lucide-react"
+import EditProfileSheet from "@/components/profile/EditProfileSheet"
 import Image from "next/image"
 
 export default function ProfileContent() {
@@ -74,10 +75,7 @@ export default function ProfileContent() {
           </div>
           
           <div className="ml-auto">
-            <button className="btn btn-ghost">
-              <Settings size={16} className="mr-2" />
-              Edit Profile
-            </button>
+            <EditProfileSheet />
           </div>
         </div>
       </div>
