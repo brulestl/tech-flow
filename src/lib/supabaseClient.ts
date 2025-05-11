@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 
 /**
  * Returns a do-nothing proxy so that any supabase.*
@@ -17,16 +18,15 @@ function createMock(): SupabaseClient<any, any, any> {
       }
 
       // leaf methods usually return a promise → resolve immediately
-      return () =>
+      return (...args) =>
         Promise.resolve({
-          data: Array.isArray(arguments[0]) ? [] : null,
+          data: args.length > 0 && Array.isArray(args[0]) ? [] : null,
           error: null,
           count: 0,
         });
     },
   };
-  // @ts-expect-error – mock implements SupabaseClient superficially
-  return new Proxy({}, handler);
+  return new Proxy({}, handler) as SupabaseClient<any, any, any>;
 }
 
 /** Browser helper – real client later, mock for now/SSR */
@@ -37,7 +37,6 @@ export const createBrowserClient = () => {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return createMock();
 
-  const { createBrowserSupabaseClient } = require('@supabase/auth-helpers-nextjs');
   return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
 };
 
