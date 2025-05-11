@@ -1,24 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { createBrowserClient } from '@/lib/supabaseClient';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 
 const Auth = dynamic(
   () => import('@supabase/auth-ui-react').then(m => m.Auth),
-  { ssr: false }
+  { ssr: false }           // never rendered on the server
 );
 
 export default function LoginPage() {
-  const [redirectUrl, setRedirectUrl] = useState('');
-  
+  /** loaded === true only after the first client-side effect runs */
+  const [loaded, setLoaded] = useState(false);
+  const [supabase, setSupabase] = useState<any>(null);
+  const [redirectUrl, setRedirectUrl] = useState<string>('');
+
   useEffect(() => {
+    // This block runs only in the browser
+    setSupabase(createBrowserClient());          // returns the silent mock for now
     setRedirectUrl(`${window.location.origin}/`);
-    
-    // Only create client when in browser
-    const supabase = createBrowserClient();
+    setLoaded(true);
   }, []);
+
+  // Render nothing during the server pass AND the very first client pass.
+  if (!loaded) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -29,32 +35,28 @@ export default function LoginPage() {
             Sign in to your TechVault account
           </p>
         </div>
-        
-        <div className="w-full">
-          {typeof window !== 'undefined' && (
-            <Auth 
-              supabaseClient={createBrowserClient()}
-              view="sign_in"
-              appearance={{
-                theme: ThemeSupa,
-                variables: {
-                  default: {
-                    colors: {
-                      brand: 'var(--primary)',
-                      brandAccent: 'var(--primary)',
-                    }
-                  },
+
+        <Auth
+          supabaseClient={supabase}
+          view="sign_in"
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: 'var(--primary)',
+                  brandAccent: 'var(--primary)',
                 },
-                className: {
-                  button: 'btn btn-primary w-full',
-                  input: 'search-bar',
-                  label: 'text-sm font-medium block mb-1',
-                },
-              }}
-              redirectTo={redirectUrl}
-            />
-          )}
-        </div>
+              },
+            },
+            className: {
+              button: 'btn btn-primary w-full',
+              input: 'search-bar',
+              label: 'text-sm font-medium block mb-1',
+            },
+          }}
+          redirectTo={redirectUrl}
+        />
       </div>
     </div>
   );
