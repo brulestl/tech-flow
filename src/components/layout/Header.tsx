@@ -18,6 +18,7 @@ export default function Header() {
   const handleLogout = async () => {
     const supabase = createBrowserClient();
     await supabase.auth.signOut();
+    localStorage.removeItem('demoAuth');
     router.push("/login");
   }
   
