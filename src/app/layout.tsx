@@ -1,17 +1,9 @@
-"use client";
-
 import "@/styles/globals.css";
 import React from "react";
 import { Inter } from 'next/font/google';
 import { type Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
-import MobileNavbar from "@/components/layout/MobileNavbar";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
-import StatsBar from "@/components/layout/StatsBar";
-import { createBrowserClient } from "@/lib/supabaseClient";
-import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { usePathname } from "next/navigation";
+import LayoutClient from "@/components/layout/LayoutClient";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -60,58 +52,15 @@ export const metadata: Metadata = {
   },
 };
 
-function RootLayoutContent({ children }: Readonly<{ children: React.ReactNode }>) {
-  const pathname = usePathname();
-  const isAuthPage = pathname?.startsWith('/(auth)') || pathname?.includes('/login') || pathname?.includes('/signup');
-  
-  if (isAuthPage) {
-    return children;
-  }
-  
-  return (
-    <div className="relative min-h-screen flex flex-col md:flex-row">
-      {/* Desktop sidebar - hidden on mobile */}
-      <div className="hidden md:flex">
-        <Sidebar />
-      </div>
-      
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col h-screen">
-        {/* Header with search */}
-        <Header />
-        
-        {/* Main content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          {children}
-        </main>
-        
-        {/* Stats bar - desktop only */}
-        <div className="hidden md:block border-t border-border">
-          <StatsBar />
-        </div>
-        
-        {/* Mobile navigation - visible only on mobile */}
-        <div className="md:hidden">
-          <MobileNavbar />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const supabase = createBrowserClient();
-  
   return (
     <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <body>
-        <SessionContextProvider supabaseClient={supabase}>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <RootLayoutContent>{children}</RootLayoutContent>
-          </ThemeProvider>
-        </SessionContextProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <LayoutClient>{children}</LayoutClient>
+        </ThemeProvider>
       </body>
     </html>
   );

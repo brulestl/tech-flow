@@ -3,9 +3,15 @@
 import { Auth } from '@supabase/auth-ui-react';
 import { createBrowserClient } from '@/lib/supabaseClient';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { useEffect, useState } from 'react';
 
 export default function SignupPage() {
   const supabase = createBrowserClient();
+  const [redirectUrl, setRedirectUrl] = useState('');
+  
+  useEffect(() => {
+    setRedirectUrl(`${window.location.origin}/`);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -27,11 +33,7 @@ export default function SignupPage() {
                 colors: {
                   brand: 'var(--primary)',
                   brandAccent: 'var(--primary)',
-                },
-                borderRadii: {
-                  button: '8px',
-                  input: '8px',
-                },
+                }
               },
             },
             className: {
@@ -40,7 +42,7 @@ export default function SignupPage() {
               label: 'text-sm font-medium block mb-1',
             },
           }}
-          redirectTo={`${window.location.origin}/`}
+          redirectTo={redirectUrl}
         />
       </div>
     </div>
