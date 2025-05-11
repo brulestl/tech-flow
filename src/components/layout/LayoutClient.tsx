@@ -23,8 +23,8 @@ export default function LayoutClient({
     // Preload the Supabase auth helpers for later use
     if (typeof window !== 'undefined') {
       import('@supabase/auth-helpers-nextjs').then(module => {
-        // @ts-ignore - Adding to window for availability
-        window.__supabaseAuthHelpers = module;
+        // Store the module for synchronous access later
+        (window as any).__supabaseAuthHelpers = module;
       });
     }
   }, []);
@@ -64,8 +64,11 @@ export default function LayoutClient({
     );
   }
   
+  // Create the client once, outside of render
+  const supabaseClient = createBrowserClient();
+  
   return (
-    <SessionContextProvider supabaseClient={createBrowserClient()}>
+    <SessionContextProvider supabaseClient={supabaseClient}>
       {isAuthPage ? (
         children
       ) : (

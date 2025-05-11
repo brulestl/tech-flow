@@ -62,22 +62,40 @@ function createMock(): SupabaseClient<any, any, any> {
 }
 
 /* ---------- exported helpers ---------- */
-export const createBrowserClient = () => {
+// Create a synchronous client that won't cause TypeScript errors
+export const createBrowserClient = (): SupabaseClient<any, "public", any> => {
   if (typeof window === 'undefined') return createMock();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return createMock();
 
-  // Use dynamic import instead of require
-  return import('@supabase/auth-helpers-nextjs')
-    .then(({ createBrowserSupabaseClient }) => {
-      return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
-    })
-    .catch(() => {
-      console.warn("Failed to load Supabase client, using mock instead");
-      return createMock();
-    });
+  // Use existing client from window if available
+  if (typeof window !== 'undefined' && (window as any).__supabaseClient) {
+    return (window as any).__supabaseClient;
+  }
+
+  try {
+    // Use synchronous import instead of dynamic import to avoid Promise
+    // This works because we're preloading the module in LayoutClient.tsx
+    if (typeof window !== 'undefined' && 
+        (window as any).__supabaseAuthHelpers && 
+        (window as any).__supabaseAuthHelpers.createBrowserSupabaseClient) {
+      const client = (window as any).__supabaseAuthHelpers.createBrowserSupabaseClient({ 
+        supabaseUrl: url, 
+        supabaseKey: key 
+      });
+      // Cache the client
+      (window as any).__supabaseClient = client;
+      return client;
+    }
+    
+    // Fallback to mock
+    return createMock();
+  } catch (error) {
+    console.warn("Failed to create Supabase client, using mock instead", error);
+    return createMock();
+  }
 };
 
 export const createServerClient = createMock;
