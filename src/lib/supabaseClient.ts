@@ -111,13 +111,13 @@ export const createBrowserClient = (): SupabaseClient<any, "public", any> => {
             return client;
           }
         }
+        
+        // Fallback to mock
+        return createMock();
+      } catch (error) {
+        console.warn("Failed to create Supabase client, using mock instead", error);
+        return createMock();
       }
-      
-      // Fallback to mock
-      return createMock();
-    } catch (error) {
-      console.warn("Failed to create Supabase client, using mock instead", error);
-      return createMock();
     }
   };
 
