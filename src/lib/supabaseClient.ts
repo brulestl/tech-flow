@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserSupabaseClient } from '@supabase/auth-helpers-nextjs';
 
 /**
  * A minimal "no-op" stub that satisfies TypeScript but
@@ -16,16 +17,17 @@ function stub(): SupabaseClient<any, any, any> {
     },
   };
   // @ts-expect-error – we knowingly return a Proxy that masquerades as SupabaseClient
-  return new Proxy({}, handler);
+  return new globalThis.Proxy({}, handler);
 }
 
 /** Browser-side helper (returns stub during SSR/build) */
 export const createBrowserClient = () => {
   if (typeof window === 'undefined') return stub();
-  const url  = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return stub();
-  const { createBrowserSupabaseClient } = require('@supabase/auth-helpers-nextjs');
+  
+  // Use the imported createBrowserSupabaseClient instead of require
   return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
 };
 
