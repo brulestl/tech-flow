@@ -15,12 +15,13 @@ export default function Header() {
   const session = useSession()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   
-  const handleLogout = async () => {
+  const handleLogout = () => {
     const supabase = createBrowserClient();
-    await supabase.auth.signOut();
-    localStorage.removeItem('demoAuth');
-    router.push("/login");
-  }
+    supabase.auth.signOut().finally(() => {
+      localStorage.removeItem('demoAuth');
+      window.location.href = '/login';      // full reload = clean slate
+    });
+  };
   
   return (
     <header className="border-b border-border py-3 px-4 md:px-6 flex items-center justify-between">
