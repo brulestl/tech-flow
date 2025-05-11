@@ -63,7 +63,7 @@ export default function LoginPage() {
             className="btn btn-secondary w-full"
             onClick={() => {
               localStorage.setItem('demoAuth', '1');
-              window.location.href = '/';
+              window.location.href = '/home';       // route that exists
             }}
           >
             Try the demo&nbsp;🚀
