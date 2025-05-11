@@ -57,6 +57,18 @@ export default function LoginPage() {
           }}
           redirectTo={redirectUrl}
         />
+        
+        <div className="mt-6 text-center">
+          <button
+            className="btn btn-secondary w-full"
+            onClick={() => {
+              localStorage.setItem('demoAuth', '1');
+              window.location.href = '/';
+            }}
+          >
+            Try the demo&nbsp;🚀
+          </button>
+        </div>
       </div>
     </div>
   );
