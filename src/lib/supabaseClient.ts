@@ -74,10 +74,13 @@ export const createBrowserClient = (): SupabaseClient<any, any, any> => {
   try {
     // We use a synchronous approach to maintain API compatibility
     // Dynamic import is handled inside the client
-    // @ts-ignore - Dynamically importing at runtime
-    const createBrowserSupabaseClient = window.__supabaseAuthHelpers?.createBrowserSupabaseClient;
-    if (createBrowserSupabaseClient) {
-      return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
+    // Only access window properties when we know window is defined
+    if (typeof window !== 'undefined' && window.__supabaseAuthHelpers) {
+      // @ts-ignore - Dynamically importing at runtime
+      const createBrowserSupabaseClient = window.__supabaseAuthHelpers.createBrowserSupabaseClient;
+      if (createBrowserSupabaseClient) {
+        return createBrowserSupabaseClient({ supabaseUrl: url, supabaseKey: key });
+      }
     }
   } catch (e) {
     console.warn("Failed to load Supabase client, using mock instead");
