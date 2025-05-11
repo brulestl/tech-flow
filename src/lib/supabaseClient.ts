@@ -86,24 +86,31 @@ export const createBrowserClient = (): SupabaseClient<any, "public", any> => {
 
   // All browser-specific code in this function
   const createBrowserSupabase = () => {
-    // Use existing client from window if available
-    const existingClient = window.__supabaseClient as SupabaseClient<any, "public", any> | undefined;
-    if (existingClient) {
-      return existingClient;
-    }
+    // Access window properties safely with explicit checks
+    if (typeof window !== 'undefined') {
+      // Use existing client from window if available
+      const existingClient = window.__supabaseClient as SupabaseClient<any, "public", any> | undefined;
+      if (existingClient) {
+        return existingClient;
+      }
 
-    try {
-      // Check if auth helpers module was preloaded
-      const helpers = window.__supabaseAuthHelpers;
-      if (helpers?.createBrowserSupabaseClient) {
-        const client = helpers.createBrowserSupabaseClient({
-          supabaseUrl: url,
-          supabaseKey: key
-        });
-        
-        // Cache the client
-        window.__supabaseClient = client;
-        return client;
+      try {
+        // Check if auth helpers module was preloaded
+        if (typeof window !== 'undefined') {
+          const helpers = window.__supabaseAuthHelpers;
+          if (helpers?.createBrowserSupabaseClient) {
+            const client = helpers.createBrowserSupabaseClient({
+              supabaseUrl: url,
+              supabaseKey: key
+            });
+            
+            // Cache the client
+            if (typeof window !== 'undefined') {
+              window.__supabaseClient = client;
+            }
+            return client;
+          }
+        }
       }
       
       // Fallback to mock
