@@ -17,7 +17,7 @@ function stub(): SupabaseClient<any, any, any> {
     },
   };
   // @ts-expect-error – we knowingly return a Proxy that masquerades as SupabaseClient
-  return new globalThis.Proxy({}, handler);
+  return new Proxy({}, handler);
 }
 
 /** Browser-side helper (returns stub during SSR/build) */
