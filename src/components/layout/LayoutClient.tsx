@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
 import { usePathname } from "next/navigation";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { createBrowserClient } from "@/lib/supabaseClient";
@@ -18,6 +19,14 @@ export default function LayoutClient({
   
   useEffect(() => {
     setMounted(true);
+    
+    // Preload the Supabase auth helpers for later use
+    if (typeof window !== 'undefined') {
+      import('@supabase/auth-helpers-nextjs').then(module => {
+        // Store the module for synchronous access later
+        (window as any).__supabaseAuthHelpers = module;
+      });
+    }
   }, []);
   
   // Don't render Supabase provider during SSR
@@ -55,8 +64,11 @@ export default function LayoutClient({
     );
   }
   
+  // Create the client once, outside of render
+  const supabaseClient = createBrowserClient();
+  
   return (
-    <SessionContextProvider supabaseClient={createBrowserClient()}>
+    <SessionContextProvider supabaseClient={supabaseClient}>
       {isAuthPage ? (
         children
       ) : (
