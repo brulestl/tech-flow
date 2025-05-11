@@ -2,7 +2,8 @@
 
 import RequireAuth from '@/components/auth/RequireAuth';
 
-export const metadata = { title: 'Saved | TechVault' };
+// Metadata can't be exported from client components
+// export const metadata = { title: 'Saved | TechVault' };
 
 export default function SavedPage() {
   return (

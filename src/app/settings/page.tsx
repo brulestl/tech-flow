@@ -3,7 +3,8 @@
 import RequireAuth from '@/components/auth/RequireAuth';
 import { Button } from '@/components/ui/button';
 
-export const metadata = { title: 'Settings | TechVault' };
+// Metadata can't be exported from client components
+// export const metadata = { title: 'Settings | TechVault' };
 
 export default function SettingsPage() {
   return (
