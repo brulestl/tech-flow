@@ -1,16 +1,23 @@
 'use client';
 
-import { Auth } from '@supabase/auth-ui-react';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { createBrowserClient } from '@/lib/supabaseClient';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { useEffect, useState } from 'react';
+
+const Auth = dynamic(
+  () => import('@supabase/auth-ui-react').then(m => m.Auth),
+  { ssr: false }
+);
 
 export default function SignupPage() {
-  const supabase = createBrowserClient();
   const [redirectUrl, setRedirectUrl] = useState('');
   
   useEffect(() => {
     setRedirectUrl(`${window.location.origin}/`);
+    
+    // Only create client when in browser
+    const supabase = createBrowserClient();
   }, []);
 
   return (
@@ -23,27 +30,31 @@ export default function SignupPage() {
           </p>
         </div>
         
-        <Auth 
-          supabaseClient={supabase}
-          view="sign_up"
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: 'var(--primary)',
-                  brandAccent: 'var(--primary)',
-                }
-              },
-            },
-            className: {
-              button: 'btn btn-primary w-full',
-              input: 'search-bar',
-              label: 'text-sm font-medium block mb-1',
-            },
-          }}
-          redirectTo={redirectUrl}
-        />
+        <div className="w-full">
+          {typeof window !== 'undefined' && (
+            <Auth 
+              supabaseClient={createBrowserClient()}
+              view="sign_up"
+              appearance={{
+                theme: ThemeSupa,
+                variables: {
+                  default: {
+                    colors: {
+                      brand: 'var(--primary)',
+                      brandAccent: 'var(--primary)',
+                    }
+                  },
+                },
+                className: {
+                  button: 'btn btn-primary w-full',
+                  input: 'search-bar',
+                  label: 'text-sm font-medium block mb-1',
+                },
+              }}
+              redirectTo={redirectUrl}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
