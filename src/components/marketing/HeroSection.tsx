@@ -1,5 +1,8 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import AnimatedFadeUp from './AnimatedFadeUp';
+import { motion } from 'framer-motion';
 
 export default function HeroSection() {
   return (
@@ -7,23 +10,29 @@ export default function HeroSection() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-24 md:grid-cols-2">
         <div className="flex flex-col justify-center">
           <AnimatedFadeUp>
-            <span className="mb-4 inline-block rounded-full bg-accent-purple/10 px-3 py-1 text-xs font-semibold text-accent-purple">
-              Achievement · Rated Top App of 2025
-            </span>
-            <h1 className="text-5xl font-bold tracking-tight md:text-6xl">
-              All your tech knowledge <span className="text-accent-purple">scooped</span> in one place.
+            <h1 className="text-5xl font-bold tracking-tight md:text-[64px] leading-tight">
+              Turn Saved Posts into <span className="text-accent-purple">Shippable Code</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground">
-              Capture threads, docs, tweets & code snippets, then learn them on your own terms.
+              Organize, learn, and build at warp speed with AI-powered workflows that capture every "aha" moment—and make it stick.
             </p>
-            <div className="mt-8 flex gap-4">
-              <Button size="lg">Get Started Free</Button>
-              <Button variant="secondary" size="lg">Watch Demo</Button>
+            <div className="mt-8">
+              <Button 
+                size="lg" 
+                className="px-8 py-6 text-lg transition-transform hover:scale-[1.03] hover:shadow-md"
+              >
+                Join the Beta →
+              </Button>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">200k+ downloads</p>
           </AnimatedFadeUp>
         </div>
-        <div className="h-80 w-full rounded-xl bg-[url(https://source.unsplash.com/collection/190727/600x800)] bg-cover bg-center shadow-lg md:h-auto" />
+        <motion.div 
+          className="h-80 w-full rounded-xl bg-[url(https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80)] bg-cover bg-center shadow-lg md:h-auto"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          alt="Developer using TechVault to organize code snippets"
+        />
       </div>
     </section>
   );
