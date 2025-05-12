@@ -1,23 +1,27 @@
-import HeroSection      from '@/components/marketing/HeroSection';
-import LogosStrip       from '@/components/marketing/LogosStrip';
-import FeatureGrid      from '@/components/marketing/FeatureGrid';
-import WhyChooseUs      from '@/components/marketing/WhyChooseUs';
-import Testimonials     from '@/components/marketing/Testimonials';
-import FAQ              from '@/components/marketing/FAQ';
-import CTABanner        from '@/components/marketing/CTABanner';
+import HeroSection from '@/components/marketing/HeroSection';
+import ProblemSection from '@/components/marketing/ProblemSection';
+import SolutionSection from '@/components/marketing/SolutionSection';
+import HowItWorks from '@/components/marketing/HowItWorks';
+import MetricsComparison from '@/components/marketing/MetricsComparison';
+import Testimonials from '@/components/marketing/Testimonials';
+import BuiltForSection from '@/components/marketing/BuiltForSection';
+import CTABanner from '@/components/marketing/CTABanner';
+import StickyCTA from '@/components/marketing/StickyCTA';
 
-export const metadata = { title: 'TechVault – Scoop knowledge like a pro' };
+export const metadata = { title: 'TechVault – Turn Saved Posts into Shippable Code' };
 
 export default function LandingPage() {
   return (
     <>
       <HeroSection />
-      <LogosStrip />
-      <FeatureGrid />
-      <WhyChooseUs />
+      <ProblemSection />
+      <SolutionSection />
+      <HowItWorks />
+      <MetricsComparison />
       <Testimonials />
-      <FAQ />
+      <BuiltForSection />
       <CTABanner />
+      <StickyCTA />
     </>
   );
 }
