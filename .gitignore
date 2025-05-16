@@ -30,8 +30,15 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -39,9 +46,39 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# idea files
+# IDE and editor files
 .idea
+.vscode
+*.swp
+*.swo
 .aider*
+*.sublime-workspace
+*.sublime-project
 
+# Cache and temp files
 .cache
 .npm
+.eslintcache
+.stylelintcache
+.prettiercache
+.turbo
+.parcel-cache
+.next
+storybook-static
+coverage
+dist
+build
+out
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# System Files
+.DS_Store
+Thumbs.db
