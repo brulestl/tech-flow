@@ -1,90 +1,85 @@
-# Skoop
+# TechVault
 
-A modern web application for managing and sharing learning resources.
+TechVault is a personal knowledge management system that helps you organize and access your tech resources, bookmarks, and learning materials.
 
 ## Features
 
-- User authentication with Supabase
-- Resource management with collections and tags
-- Row-level security for data protection
-- Modern UI with Next.js and Tailwind CSS
-- Type-safe database access with Drizzle ORM
-
-## Prerequisites
-
-- Node.js 18 or later
-- pnpm 8 or later
-- Supabase account and project
+- **Search**: Find resources by keywords, tags, or content
+- **Collections**: Organize your resources into themed collections
+- **Profile**: Manage your profile and preferences
+- **Save**: Save new resources to your knowledge base
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18.x or later
+- npm or yarn
+
+### Installation
+
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/skoop.git
-   cd skoop
-   ```
+```bash
+git clone https://github.com/yourusername/techvault.git
+cd techvault
+```
 
 2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with the following variables:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   DATABASE_URL=your_database_url
-   ```
-
-4. Run database migrations:
-   ```bash
-   pnpm run db:generate
-   ```
-
-5. Start the development server:
-   ```bash
-   pnpm dev
-   ```
-
-## Development
-
-### Available Scripts
-
-- `pnpm dev` - Start development server
-- `pnpm build` - Build for production
-- `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint
-- `pnpm type-check` - Run TypeScript type checking
-- `pnpm test` - Run tests
-- `pnpm test:watch` - Run tests in watch mode
-- `pnpm test:coverage` - Run tests with coverage report
-
-### Project Structure
-
-```
-src/
-├── app/              # Next.js app directory
-├── components/       # React components
-├── lib/             # Utility functions and shared code
-│   ├── auth/        # Authentication related code
-│   ├── db/          # Database access layer
-│   └── utils/       # Utility functions
-├── styles/          # Global styles
-└── types/           # TypeScript type definitions
+```bash
+npm install
+# or
+yarn install
 ```
 
-### Testing
+3. Create a `.env.local` file in the root directory and add your environment variables:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+OPENAI_API_KEY=your_openai_api_key
+```
 
-The project uses Jest and React Testing Library for testing. Tests are located in `__tests__` directories next to the files they test.
+4. Start the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-### Database
+5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-The project uses Supabase as the backend and Drizzle ORM for type-safe database access. Database migrations are managed through the `supabase/migrations` directory.
+## Testing
 
-### Authentication
+Run the test suite:
 
-Authentication is handled through Supabase Auth. The project includes a custom authentication context and hooks for managing user sessions.
+```bash
+npm test
+# or
+yarn test
+```
+
+Run tests in watch mode:
+
+```bash
+npm run test:watch
+# or
+yarn test:watch
+```
+
+Generate test coverage report:
+
+```bash
+npm run test:coverage
+# or
+yarn test:coverage
+```
+
+## Building for Production
+
+```bash
+npm run build
+# or
+yarn build
+```
 
 ## Contributing
 
@@ -96,4 +91,13 @@ Authentication is handled through Supabase Auth. The project includes a custom a
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Next.js](https://nextjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Radix UI](https://www.radix-ui.com/)
+- [OpenAI](https://openai.com/)
+- [Supabase](https://supabase.com/) 

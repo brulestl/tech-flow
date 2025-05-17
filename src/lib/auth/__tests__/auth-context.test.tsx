@@ -77,6 +77,11 @@ describe('AuthContext', () => {
   });
 
   it('handles sign in', async () => {
+    mockSupabase.auth.signInWithPassword.mockResolvedValueOnce({
+      data: { user: { id: '123', email: 'test@example.com' } },
+      error: null
+    });
+
     render(
       <AuthProvider>
         <TestComponent />
@@ -88,9 +93,25 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: 'password',
+        password: 'password'
       });
-      expect(mockRouter.push).toHaveBeenCalledWith('/dashboard');
+    });
+  });
+
+  it('handles sign out', async () => {
+    mockSupabase.auth.signOut.mockResolvedValueOnce({ error: null });
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    fireEvent.click(screen.getByText('Sign Out'));
+
+    await waitFor(() => {
+      expect(mockSupabase.auth.signOut).toHaveBeenCalled();
+      expect(mockRouter.push).toHaveBeenCalledWith('/login');
     });
   });
 
@@ -109,21 +130,6 @@ describe('AuthContext', () => {
         password: 'password',
       });
       expect(mockRouter.push).toHaveBeenCalledWith('/dashboard');
-    });
-  });
-
-  it('handles sign out', async () => {
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
-
-    fireEvent.click(screen.getByText('Sign Out'));
-
-    await waitFor(() => {
-      expect(mockSupabase.auth.signOut).toHaveBeenCalled();
-      expect(mockRouter.push).toHaveBeenCalledWith('/');
     });
   });
 

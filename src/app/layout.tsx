@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { type Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import LayoutClient from "@/components/layout/LayoutClient";
+import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     default: "TechVault",
     template: "%s | TechVault",
   },
-  description: "Organize your tech resources, bookmarks, and learning materials",
+  description: "Your personal knowledge management system",
   applicationName: "TechVault",
   keywords: [
     "tech resources", 
@@ -60,6 +61,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <LayoutClient>{children}</LayoutClient>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

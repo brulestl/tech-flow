@@ -1,9 +1,12 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { X, Link, Tag, Save } from "lucide-react"
-import { ResourceType, saveResource } from "@/lib/utils"
+import { X, Link, Tag, Save, Folder } from "lucide-react"
+import { saveResource, getCollections, addResourceToCollection } from "@/lib/dataService"
+import type { Resource, Collection } from "@/lib/dataService"
+
+type ResourceType = Resource['type']
 
 interface SaveModalProps {
   onClose: () => void;
@@ -16,22 +19,83 @@ export default function SaveModal({ onClose }: SaveModalProps) {
   const [tagInput, setTagInput] = useState("")
   const [tags, setTags] = useState<string[]>([])
   const [notes, setNotes] = useState("")
+  const [selectedCollection, setSelectedCollection] = useState<string | null>(null)
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadCollections = async () => {
+      try {
+        const data = await getCollections()
+        setCollections(data)
+      } catch (err) {
+        console.error('Failed to load collections:', err)
+      }
+    }
+    loadCollections()
+  }, [])
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     
     if (!url || !title) return
     
-    saveResource({
-      title,
-      url,
-      type,
-      tags,
-      notes,
-      summary: "", // Could be auto-generated in a real app
-    })
-    
-    onClose()
+    try {
+      setIsLoading(true)
+      const resource = await saveResource({
+        title,
+        url,
+        type,
+        description: notes || null,
+        summary: null,
+        summary_status: "pending",
+        summary_updated_at: null,
+      })
+      
+      // Add to collection if selected
+      if (selectedCollection) {
+        await addResourceToCollection(selectedCollection, resource.id)
+      }
+      
+      // Generate summary asynchronously
+      try {
+        const response = await fetch('/api/summarize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url,
+            title,
+            type,
+          }),
+        })
+        
+        if (!response.ok) throw new Error('Failed to generate summary')
+        
+        const { summary } = await response.json()
+        
+        if (summary) {
+          await saveResource({
+            ...resource,
+            summary,
+            summary_status: "completed",
+            summary_updated_at: new Date().toISOString(),
+          })
+        }
+      } catch (summaryError) {
+        console.error('Error generating summary:', summaryError)
+        // Don't show error to user since this is async
+      }
+      
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save resource')
+    } finally {
+      setIsLoading(false)
+    }
   }
   
   const handleAddTag = () => {
@@ -75,6 +139,12 @@ export default function SaveModal({ onClose }: SaveModalProps) {
         </div>
         
         <form onSubmit={handleSubmit} className="p-4">
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+              {error}
+            </div>
+          )}
+          
           <div className="space-y-4">
             {/* URL Input */}
             <div>
@@ -91,6 +161,7 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -108,6 +179,7 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -115,7 +187,7 @@ export default function SaveModal({ onClose }: SaveModalProps) {
             <div>
               <label className="block text-sm font-medium mb-1">Type</label>
               <div className="flex flex-wrap gap-2">
-                {(["tweet", "instagram", "code", "article", "other"] as ResourceType[]).map((t) => (
+                {(["article", "video", "book", "course", "other"] as ResourceType[]).map((t) => (
                   <button
                     key={t}
                     type="button"
@@ -125,10 +197,35 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                         : "bg-accent text-accent-foreground"
                     }`}
                     onClick={() => setType(t)}
+                    disabled={isLoading}
                   >
                     {t}
                   </button>
                 ))}
+              </div>
+            </div>
+            
+            {/* Collection */}
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="collection">
+                Collection
+              </label>
+              <div className="relative">
+                <Folder className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
+                <select
+                  id="collection"
+                  className="search-bar pl-10"
+                  value={selectedCollection || ""}
+                  onChange={(e) => setSelectedCollection(e.target.value || null)}
+                  disabled={isLoading}
+                >
+                  <option value="">No Collection</option>
+                  {collections.map(collection => (
+                    <option key={collection.id} value={collection.id}>
+                      {collection.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             
@@ -146,6 +243,7 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleKeyDown}
+                  disabled={isLoading}
                 />
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -159,6 +257,7 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                       type="button"
                       onClick={() => setTags(prev => prev.filter(t => t !== tag))}
                       className="text-xs"
+                      disabled={isLoading}
                     >
                       ✕
                     </button>
@@ -183,6 +282,7 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                 className="search-bar min-h-[80px] resize-none"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             
@@ -192,15 +292,26 @@ export default function SaveModal({ onClose }: SaveModalProps) {
                 type="button"
                 onClick={onClose}
                 className="btn btn-ghost"
+                disabled={isLoading}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="btn btn-primary flex items-center gap-2"
+                disabled={isLoading}
               >
-                <Save size={18} />
-                Save Resource
+                {isLoading ? (
+                  <>
+                    <span className="animate-spin">⟳</span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    Save Resource
+                  </>
+                )}
               </button>
             </div>
           </div>
