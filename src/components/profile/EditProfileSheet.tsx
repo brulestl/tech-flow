@@ -1,24 +1,52 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-export default function EditProfileSheet() {
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [avatar, setAvatar] = useState<File | null>(null);
+interface UserProfile {
+  id: string;
+  name: string;
+  avatar?: string;
+  streak: number;
+  flashcardsMastered: number;
+  activeSessions: number;
+}
 
-  const handleSubmit = (e: React.FormEvent) => {
+interface EditProfileSheetProps {
+  profile: UserProfile;
+  onProfileUpdate: (updates: Partial<UserProfile>) => void;
+}
+
+export default function EditProfileSheet({ profile, onProfileUpdate }: EditProfileSheetProps) {
+  const [name, setName] = useState(profile.name || '');
+  const [avatar, setAvatar] = useState<string>(profile.avatar || '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(profile.name || '');
+    setAvatar(profile.avatar || '');
+  }, [profile]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here we would save the profile
-    console.log('Saving profile:', { name, bio, avatar });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAvatar(e.target.files[0]);
+    setError(null);
+    setIsSaving(true);
+    try {
+      const updates: Partial<UserProfile> = { name, avatar };
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', profile.id);
+      if (error) throw error;
+      onProfileUpdate(updates);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -34,21 +62,24 @@ export default function EditProfileSheet() {
         <SheetHeader>
           <SheetTitle>Edit Profile</SheetTitle>
         </SheetHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
+          {error && (
+            <div className="mb-2 p-2 bg-destructive/10 text-destructive rounded-md text-sm">{error}</div>
+          )}
           <div className="space-y-2">
             <label htmlFor="avatar" className="text-sm font-medium block">
-              Profile Picture
+              Avatar URL
             </label>
             <input
               id="avatar"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
+              type="text"
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value)}
               className="search-bar w-full"
+              placeholder="https://..."
+              disabled={isSaving}
             />
           </div>
-          
           <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium block">
               Display Name
@@ -60,25 +91,12 @@ export default function EditProfileSheet() {
               onChange={(e) => setName(e.target.value)}
               className="search-bar w-full"
               placeholder="Your name"
+              disabled={isSaving}
             />
           </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="bio" className="text-sm font-medium block">
-              Bio
-            </label>
-            <textarea
-              id="bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="search-bar w-full min-h-[150px] resize-none"
-              placeholder="Tell us about yourself..."
-            />
-          </div>
-          
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="submit">
-              Save Changes
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>

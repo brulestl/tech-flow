@@ -1,34 +1,96 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { UserProfile, getFromStorage, setToStorage, generateMockData } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { User, Edit, Flame, Star, Calendar } from "lucide-react"
 import EditProfileSheet from "@/components/profile/EditProfileSheet"
 import Image from "next/image"
+import { supabase } from '@/lib/supabase'
+
+interface UserProfile {
+  id: string;
+  name: string;
+  avatar?: string;
+  streak: number;
+  flashcardsMastered: number;
+  activeSessions: number;
+}
 
 export default function ProfileContent() {
-  const [profile, setProfile] = useState<UserProfile>({
-    name: "",
-    streak: 0,
-    flashcardsMastered: 0,
-    activeSessions: 0
-  })
-  
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
-    // Generate mock data if none exists
-    generateMockData()
-    
-    const userProfile = getFromStorage<UserProfile>('profile', {
-      name: "Dev User",
-      streak: 5,
-      flashcardsMastered: 42,
-      activeSessions: 2
-    })
-    
-    setProfile(userProfile)
+    const fetchProfile = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setError('Not logged in')
+          setLoading(false)
+          return
+        }
+        // Try to fetch profile
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        if (error && error.code !== 'PGRST116') {
+          throw error
+        }
+        if (!data) {
+          // Create default profile if not exists
+          const defaultProfile = {
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            avatar: user.user_metadata?.avatar_url || '',
+            streak: 0,
+            flashcardsMastered: 0,
+            activeSessions: 0,
+          }
+          const { data: created, error: insertError } = await supabase
+            .from('profiles')
+            .insert([defaultProfile])
+            .select()
+            .single()
+          if (insertError) throw insertError
+          setProfile(created)
+        } else {
+          setProfile(data)
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load profile')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchProfile()
   }, [])
-  
+
+  const handleProfileUpdate = (updates: Partial<UserProfile>) => {
+    if (!profile) return
+    setProfile({ ...profile, ...updates })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin text-2xl">⟳</div>
+      </div>
+    )
+  }
+  if (error || !profile) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg text-destructive mb-2">Error loading profile</p>
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       {/* Profile card */}
@@ -50,9 +112,7 @@ export default function ProfileContent() {
                 </div>
               )}
             </div>
-            <button className="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-primary-foreground">
-              <Edit size={14} />
-            </button>
+            {/* Edit avatar could be implemented here */}
           </div>
           
           <div className="space-y-2">
@@ -75,7 +135,7 @@ export default function ProfileContent() {
           </div>
           
           <div className="ml-auto">
-            <EditProfileSheet />
+            <EditProfileSheet profile={profile} onProfileUpdate={handleProfileUpdate} />
           </div>
         </div>
       </div>

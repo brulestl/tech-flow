@@ -1,100 +1,123 @@
 "use client"
 
-import React, { useState } from "react"
-import { motion } from "framer-motion"
-import { AlertCircle, Zap, Layers, Layout, Brain, DollarSign } from "lucide-react"
+import React, { useEffect, useState } from "react"
+import { BookOpen, Code, Lightbulb, GraduationCap } from "lucide-react"
+import { useRouter } from "next/navigation"
 
-interface ClusterProps {
-  title: string;
-  description: string;
-  count: number;
-  icon: React.ReactNode;
-  color: string;
+interface Cluster {
+  id: number
+  title: string
+  description: string
+  count: number
+  resourceIds: string[]
+  icon: string
+  color: string
 }
 
 export default function ClusterPanel() {
-  const [clusters] = useState<ClusterProps[]>([
-    { 
-      title: "React Hooks", 
-      description: "useState, useEffect, custom hooks", 
-      count: 12,
-      icon: <Layers />,
-      color: "var(--accent-purple)"
-    },
-    { 
-      title: "CSS Flex & Grid", 
-      description: "Layout techniques and tricks", 
-      count: 8,
-      icon: <Layout />,
-      color: "var(--accent-blue)"
-    },
-    { 
-      title: "UI Animations", 
-      description: "CSS and JavaScript animations", 
-      count: 5,
-      icon: <Zap />,
-      color: "var(--accent-pink)"
-    },
-    { 
-      title: "TypeScript Types", 
-      description: "Advanced type patterns", 
-      count: 9,
-      icon: <AlertCircle />,
-      color: "var(--accent-cyan)" 
-    },
-    { 
-      title: "Next.js Patterns", 
-      description: "App router and server components", 
-      count: 7,
-      icon: <Brain />,
-      color: "var(--accent-green)"
+  const [clusters, setClusters] = useState<Cluster[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    const fetchClusters = async () => {
+      try {
+        const response = await fetch('/api/clusters')
+        if (!response.ok) {
+          throw new Error('Failed to fetch clusters')
+        }
+        const data = await response.json()
+        setClusters(data.clusters)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ])
 
-  return (
-    <div className="space-y-3">
-      {clusters.map((cluster, index) => (
-        <ClusterCard
-          key={index}
-          cluster={cluster}
-        />
-      ))}
-      
-      <motion.button
-        className="w-full py-3 px-4 border border-dashed border-border rounded-xl text-center text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        Create new cluster
-      </motion.button>
-    </div>
-  )
-}
+    fetchClusters()
+  }, [])
 
-function ClusterCard({ cluster }: { cluster: ClusterProps }) {
-  return (
-    <motion.div
-      className="p-4 rounded-xl border border-border hover:border-primary cursor-pointer bg-card hover:shadow-md transition-all"
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="flex items-start">
-        <div 
-          className="mr-3 p-2 rounded-md" 
-          style={{ 
-            backgroundColor: `${cluster.color}20`, // 20% opacity
-            color: cluster.color 
-          }}
-        >
-          {cluster.icon}
-        </div>
-        
-        <div>
-          <h3 className="font-medium">{cluster.title}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{cluster.description}</p>
-          <p className="text-xs mt-1.5 font-medium">{cluster.count} resources</p>
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'BookOpen': return <BookOpen size={20} />
+      case 'Code': return <Code size={20} />
+      case 'Lightbulb': return <Lightbulb size={20} />
+      case 'GraduationCap': return <GraduationCap size={20} />
+      default: return <BookOpen size={20} />
+    }
+  }
+
+  const handleClusterClick = (cluster: Cluster) => {
+    // Navigate to search page with cluster filter
+    router.push(`/search?cluster=${cluster.id}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="card p-4">
+        <h2 className="text-lg font-medium mb-4">Suggested Clusters</h2>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin text-2xl">⟳</div>
         </div>
       </div>
-    </motion.div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="card p-4">
+        <h2 className="text-lg font-medium mb-4">Suggested Clusters</h2>
+        <div className="p-4 bg-destructive/10 text-destructive rounded-md">
+          {error}
+        </div>
+      </div>
+    )
+  }
+
+  if (clusters.length === 0) {
+    return (
+      <div className="card p-4">
+        <h2 className="text-lg font-medium mb-4">Suggested Clusters</h2>
+        <p className="text-muted-foreground text-center py-8">
+          Add more resources to see suggested clusters
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card p-4">
+      <h2 className="text-lg font-medium mb-4">Suggested Clusters</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {clusters.map((cluster) => (
+          <button
+            key={cluster.id}
+            onClick={() => handleClusterClick(cluster)}
+            className="cluster-card p-4 rounded-lg border border-border hover:border-primary/50 transition-colors text-left"
+            style={{ backgroundColor: `${cluster.color}10` }}
+          >
+            <div className="flex items-start gap-3">
+              <div 
+                className="p-2 rounded-md flex-shrink-0"
+                style={{ backgroundColor: `${cluster.color}20` }}
+              >
+                {getIcon(cluster.icon)}
+              </div>
+              <div>
+                <h3 className="font-medium mb-1">{cluster.title}</h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {cluster.description}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {cluster.count} {cluster.count === 1 ? 'resource' : 'resources'}
+                </p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }

@@ -1,22 +1,47 @@
 "use client"
 
-import React from "react"
-import { Resource, formatDate, stringToColor } from "@/lib/utils"
+import React, { useState } from "react"
 import { motion } from "framer-motion"
-import { ExternalLink, Twitter, Instagram, Code, FileText, Bookmark } from "lucide-react"
-import Image from "next/image"
+import { ExternalLink, FileText, Bookmark, Video, Book, GraduationCap, MoreVertical, Edit, Trash2 } from "lucide-react"
+import type { Database } from "@/lib/database.types"
 
-interface ResourceCardProps {
-  resource: Resource;
+type Resource = Database['public']['Tables']['resources']['Row']
+
+interface ResourceWithTags extends Resource {
+  tags: string[]
 }
 
-export default function ResourceCard({ resource }: ResourceCardProps) {
+interface ResourceCardProps {
+  resource: ResourceWithTags;
+  onEdit?: (resource: ResourceWithTags) => void;
+  onDelete?: (resource: ResourceWithTags) => void;
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  
+  if (diffInDays === 0) return 'Today'
+  if (diffInDays === 1) return 'Yesterday'
+  if (diffInDays < 7) return `${diffInDays} days ago`
+  
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+  })
+}
+
+export default function ResourceCard({ resource, onEdit, onDelete }: ResourceCardProps) {
+  const [showDropdown, setShowDropdown] = useState(false)
+  
   const getIconByType = () => {
     switch (resource.type) {
-      case "tweet": return <Twitter size={16} className="text-accent-blue" />;
-      case "instagram": return <Instagram size={16} className="text-accent-pink" />;
-      case "code": return <Code size={16} className="text-accent-green" />;
-      case "article": return <FileText size={16} className="text-accent-purple" />;
+      case "video": return <Video size={16} className="text-accent-blue" />;
+      case "book": return <Book size={16} className="text-accent-green" />;
+      case "course": return <GraduationCap size={16} className="text-accent-purple" />;
+      case "article": return <FileText size={16} className="text-accent-orange" />;
       default: return <Bookmark size={16} />;
     }
   }
@@ -28,25 +53,11 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-start gap-4">
-        {/* Thumbnail if available */}
-        {resource.thumbnail && (
-          <div className="w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-accent">
-            <div className="relative w-full h-full">
-              <Image 
-                src={resource.thumbnail} 
-                alt={resource.title}
-                fill
-                style={{ objectFit: 'cover' }}
-              />
-            </div>
-          </div>
-        )}
-        
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             {getIconByType()}
-            <p className="text-xs text-muted-foreground">{formatDate(resource.dateAdded)}</p>
+            <p className="text-xs text-muted-foreground">{formatDate(resource.created_at)}</p>
           </div>
           
           <h3 className="font-medium text-base truncate">{resource.title}</h3>
@@ -57,39 +68,75 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
             </p>
           )}
           
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {resource.tags.slice(0, 3).map((tag) => (
-              <div 
-                key={tag} 
-                className="tag"
-                style={{ 
-                  backgroundColor: `${stringToColor(tag)}20`, // 20% opacity
-                  color: stringToColor(tag),
-                  borderWidth: 1,
-                  borderColor: `${stringToColor(tag)}40`, // 40% opacity
-                }}
-              >
-                {tag}
-              </div>
-            ))}
+          {resource.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+              {resource.description}
+            </p>
+          )}
+
+          {resource.tags && resource.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {resource.tags.map(tag => (
+                <span 
+                  key={tag}
+                  className="tag text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Actions */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {resource.url && (
+            <a 
+              href={resource.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-1.5 rounded-md hover:bg-accent"
+            >
+              <ExternalLink size={16} />
+            </a>
+          )}
+          
+          <div className="relative">
+            <button
+              className="p-1.5 rounded-md hover:bg-accent"
+              onClick={() => setShowDropdown(!showDropdown)}
+            >
+              <MoreVertical size={16} />
+            </button>
             
-            {resource.tags.length > 3 && (
-              <div className="tag bg-accent text-accent-foreground">
-                +{resource.tags.length - 3}
+            {showDropdown && (
+              <div className="absolute right-0 mt-1 w-48 bg-card rounded-md shadow-lg border border-border z-10">
+                <div className="py-1">
+                  <button
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-accent flex items-center gap-2"
+                    onClick={() => {
+                      setShowDropdown(false)
+                      onEdit?.(resource)
+                    }}
+                  >
+                    <Edit size={16} />
+                    Edit Resource
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-accent flex items-center gap-2 text-destructive"
+                    onClick={() => {
+                      setShowDropdown(false)
+                      onDelete?.(resource)
+                    }}
+                  >
+                    <Trash2 size={16} />
+                    Delete Resource
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
-        
-        {/* Actions */}
-        <a 
-          href={resource.url} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="p-1.5 rounded-md hover:bg-accent flex-shrink-0"
-        >
-          <ExternalLink size={16} />
-        </a>
       </div>
     </motion.div>
   )

@@ -294,4 +294,38 @@ CREATE POLICY "Resource tags are viewable by resource owner"
             WHERE resources.id = resource_tags.resource_id
             AND resources.user_id = auth.uid()
         )
-    ); 
+    );
+
+-- Create function for semantic search
+CREATE OR REPLACE FUNCTION match_resources(
+  query_embedding vector(1536),
+  match_threshold float,
+  match_count int,
+  p_user_id uuid
+)
+RETURNS TABLE (
+  id uuid,
+  title text,
+  description text,
+  url text,
+  type resource_type,
+  similarity float
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    resources.id,
+    resources.title,
+    resources.description,
+    resources.url,
+    resources.type,
+    1 - (resources.embedding <=> query_embedding) as similarity
+  FROM resources
+  WHERE resources.user_id = p_user_id
+    AND 1 - (resources.embedding <=> query_embedding) > match_threshold
+  ORDER BY resources.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$; 
