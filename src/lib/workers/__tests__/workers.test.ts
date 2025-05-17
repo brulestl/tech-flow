@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { processResource } from '../embeddingWorker';
 import { processResourceSummary } from '../summaryWorker';
 import { createClient } from '@supabase/supabase-js';

@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { Database } from '../database.types';

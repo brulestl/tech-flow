@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/database.types';
 import OpenAI from 'openai';
