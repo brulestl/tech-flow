@@ -1,10 +1,11 @@
-import ProfileContent from '@/components/profile/ProfileContent'
+import { Metadata } from 'next';
+import ProfileContent from '@/components/profile/ProfileContent';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Profile | TechVault',
-  description: 'View and manage your profile',
-}
+  description: 'Manage your profile and connected accounts',
+};
 
-export default function Profile() {
-  return <ProfileContent />
+export default function ProfilePage() {
+  return <ProfileContent />;
 }

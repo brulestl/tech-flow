@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { POST } from '../route';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';

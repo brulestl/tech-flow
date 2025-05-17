@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { processResource, processEmbeddingQueue } from '../embeddingWorker';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';

@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { GET } from '../route';
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';

@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserProfile, getFromStorage, setToStorage } from '@/lib/utils';
 import { Edit2, Trophy, BookOpen, Clock } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const AccountConnections = dynamic(() => import('@/components/AccountConnections'), {
+  ssr: false
+});
 
 interface ProfileContentProps {
   onEdit?: () => void;
@@ -57,83 +62,29 @@ const ProfileContent: React.FC<ProfileContentProps> = ({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <img
-              src={profile.avatar || '/default-avatar.png'}
-              alt={profile.name}
-              className="w-16 h-16 rounded-full"
-            />
-            {isEditing ? (
-              <Input
-                value={editedProfile?.name || ''}
-                onChange={(e) =>
-                  setEditedProfile(prev => prev ? { ...prev, name: e.target.value } : null)
-                }
-                className="w-48"
-              />
-            ) : (
-              <h2 className="text-2xl font-bold">{profile.name}</h2>
-            )}
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Profile</h1>
+      
+      <div className="grid gap-8">
+        {/* Profile Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-6 bg-card rounded-lg border">
+            <h3 className="text-lg font-semibold mb-2">Resources Saved</h3>
+            <p className="text-3xl font-bold">0</p>
           </div>
-          {isEditing ? (
-            <div className="space-x-2">
-              <Button variant="outline" onClick={handleCancel}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>Save</Button>
-            </div>
-          ) : (
-            <Button variant="ghost" onClick={handleEdit}>
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{profile.streak} day streak</p>
-                <p className="text-xs text-muted-foreground">Current Streak</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <BookOpen className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{profile.flashcardsMastered} mastered</p>
-                <p className="text-xs text-muted-foreground">Flashcards</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Trophy className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">{profile.activeSessions} active</p>
-                <p className="text-xs text-muted-foreground">Study Sessions</p>
-              </div>
-            </div>
+          <div className="p-6 bg-card rounded-lg border">
+            <h3 className="text-lg font-semibold mb-2">Collections</h3>
+            <p className="text-3xl font-bold">0</p>
           </div>
+          <div className="p-6 bg-card rounded-lg border">
+            <h3 className="text-lg font-semibold mb-2">Study Sessions</h3>
+            <p className="text-3xl font-bold">0</p>
+          </div>
+        </div>
 
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-2">Achievements</h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.streak >= 5 && (
-                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                  5 Day Streak
-                </div>
-              )}
-              {profile.flashcardsMastered >= 40 && (
-                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-                  Flashcard Master
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Connected Accounts Section */}
+        <AccountConnections />
+      </div>
     </div>
   );
 };

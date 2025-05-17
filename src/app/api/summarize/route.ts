@@ -1,3 +1,4 @@
+import 'openai/shims/node'
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { Readability } from '@mozilla/readability'
