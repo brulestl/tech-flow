@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import SaveModal from '@/components/save/SaveModal'
 
-export const metadata = {
+const metadata = {
   title: 'Save | TechVault',
   description: 'Save new resources to your knowledge base',
 }

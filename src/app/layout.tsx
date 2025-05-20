@@ -5,6 +5,8 @@ import { type Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import LayoutClient from "@/components/layout/LayoutClient";
 import { Toaster } from '@/components/ui/toaster'
+import Providers from "./Providers";
+import { SupabaseProvider } from '@/components/providers/SupabaseProvider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
     default: "TechVault",
     template: "%s | TechVault",
   },
-  description: "Your personal knowledge management system",
+  description: "Your vault for all things tech",
   applicationName: "TechVault",
   keywords: [
     "tech resources", 
@@ -59,10 +61,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <LayoutClient>{children}</LayoutClient>
-          <Toaster />
-        </ThemeProvider>
+        <SupabaseProvider>
+          <Providers>
+            <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+              <LayoutClient>{children}</LayoutClient>
+              <Toaster />
+            </ThemeProvider>
+          </Providers>
+        </SupabaseProvider>
       </body>
     </html>
   );

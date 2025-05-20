@@ -6,8 +6,10 @@ import ClusterPanel from "@/components/features/ClusterPanel"
 import RecentSavesList from "@/components/features/RecentSavesList"
 import SearchResultsPanel from "@/components/features/SearchResultsPanel"
 import EditResourceModal from "@/components/features/EditResourceModal"
+import { useSupabaseClient } from "@supabase/auth-helpers-react"
 
 export default function DashboardGrid() {
+  const supabase = useSupabaseClient()
   const [recentResources, setRecentResources] = useState<Resource[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -16,9 +18,24 @@ export default function DashboardGrid() {
   const loadResources = async () => {
     try {
       setIsLoading(true)
-      const resources = await getRecentResources(5)
-      setRecentResources(resources)
+      setError(null)
+      const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Table doesn't exist or user doesn't have access
+          setError('Please connect your social media account to start saving resources')
+          return
+        }
+        throw error
+      }
+      setRecentResources(data || [])
     } catch (err) {
+      console.error('Error loading resources:', err)
       setError(err instanceof Error ? err.message : 'Failed to load resources')
     } finally {
       setIsLoading(false)
@@ -27,7 +44,7 @@ export default function DashboardGrid() {
   
   useEffect(() => {
     loadResources()
-  }, [])
+  }, [supabase])
   
   const handleEdit = (resource: Resource) => {
     setEditingResource(resource)
@@ -55,8 +72,29 @@ export default function DashboardGrid() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <p className="text-lg text-destructive mb-2">Error loading resources</p>
+        <p className="text-lg text-destructive mb-2">Unable to load resources</p>
         <p className="text-muted-foreground">{error}</p>
+        {error.includes('connect your social media account') && (
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-2">
+              To get started, please connect your social media account:
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => supabase.auth.signInWithOAuth({ provider: 'twitter' })}
+                className="btn btn-outline"
+              >
+                Connect Twitter
+              </button>
+              <button
+                onClick={() => supabase.auth.signInWithOAuth({ provider: 'github' })}
+                className="btn btn-outline"
+              >
+                Connect GitHub
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

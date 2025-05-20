@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { createBrowserSupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { usePathname } from "next/navigation";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { createBrowserClient } from "@/lib/supabaseClient";
 import MobileNavbar from "@/components/layout/MobileNavbar";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
@@ -17,21 +16,22 @@ export default function LayoutClient({
   const pathname = usePathname();
   const isAuthPage = pathname?.startsWith('/(auth)') || pathname?.includes('/login') || pathname?.includes('/signup');
   const [mounted, setMounted] = useState(false);
+  const [supabaseClient, setSupabaseClient] = useState<any>(null);
   
   useEffect(() => {
     setMounted(true);
     
-    // Preload the Supabase auth helpers for later use
-    if (typeof window !== 'undefined') {
-      import('@supabase/auth-helpers-nextjs').then(module => {
-        // Store the module for synchronous access later
-        (window as any).__supabaseAuthHelpers = module;
-      });
-    }
+    // Initialize Supabase client
+    const initSupabase = async () => {
+      const client = createClientComponentClient();
+      setSupabaseClient(client);
+    };
+    
+    initSupabase();
   }, []);
   
   // Don't render Supabase provider during SSR
-  if (!mounted) {
+  if (!mounted || !supabaseClient) {
     return isAuthPage ? (
       children
     ) : (
@@ -65,15 +65,12 @@ export default function LayoutClient({
     );
   }
   
-  // Create the client once, outside of render
-  const supabaseClient = createBrowserClient();
-  
   return (
     <SessionContextProvider supabaseClient={supabaseClient}>
       {isAuthPage ? (
         children
       ) : (
-          <div className="relative min-h-screen flex flex-col md:flex-row">
+        <div className="relative min-h-screen flex flex-col md:flex-row">
           {/* Desktop sidebar - hidden on mobile */}
           <div className="hidden md:flex">
             <Sidebar />

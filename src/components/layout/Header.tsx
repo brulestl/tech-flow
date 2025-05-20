@@ -8,13 +8,24 @@ import { Suspense } from "react"
 import { createBrowserClient } from "@supabase/ssr"
 import { useRouter } from "next/navigation"
 import { useSession } from "@supabase/auth-helpers-react"
+import { Spinner } from "@/components/ui/Spinner"
 
 export default function Header() {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
-  const session = useSession()
+  const sessHook = useSession()
+  const session = sessHook?.data
+  const status = sessHook?.status
   const [dropdownOpen, setDropdownOpen] = useState(false)
   
+  if (status === "loading") {
+    return <Spinner />
+  }
+  
+  if (!session) {
+    return <div>Please log in</div>
+  }
+
   const handleLogout = async () => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

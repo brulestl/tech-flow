@@ -1,2 +1,4 @@
-export { metadata } from '@/app/page';
-export { default } from '@/app/page';
+import SkoopLanding from '@/components/marketing/SkoopLanding';
+export default function LandingPage() {
+  return <SkoopLanding />;
+}

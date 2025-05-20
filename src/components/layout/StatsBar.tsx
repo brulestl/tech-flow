@@ -24,16 +24,6 @@ export default function StatsBar() {
       try {
         const supabase = createClientComponentClient<Database>()
         
-        // Get user's streak from study_sessions
-        const { data: sessions, error: sessionsError } = await supabase
-          .from('study_sessions')
-          .select('streak_days')
-          .order('started_at', { ascending: false })
-          .limit(1)
-          .single()
-        
-        if (sessionsError) throw sessionsError
-        
         // Get flashcards mastered count
         const { count: masteredCount, error: masteredError } = await supabase
           .from('flashcards')
@@ -42,18 +32,39 @@ export default function StatsBar() {
         
         if (masteredError) throw masteredError
         
-        // Get active sessions count
-        const { count: activeCount, error: activeError } = await supabase
-          .from('study_sessions')
-          .select('*', { count: 'exact', head: true })
-          .is('ended_at', null)
+        // Try to get study session stats, but don't fail if the table doesn't exist
+        let streak = 0
+        let activeSessions = 0
         
-        if (activeError) throw activeError
+        try {
+          const { data: sessions, error: sessionsError } = await supabase
+            .from('study_sessions')
+            .select('streak_days')
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .single()
+          
+          if (!sessionsError) {
+            streak = sessions?.streak_days || 0
+          }
+          
+          const { count: activeCount, error: activeError } = await supabase
+            .from('study_sessions')
+            .select('*', { count: 'exact', head: true })
+            .is('ended_at', null)
+          
+          if (!activeError) {
+            activeSessions = activeCount || 0
+          }
+        } catch (err) {
+          // Ignore errors related to missing study_sessions table
+          console.log('Study sessions not available yet')
+        }
         
         setStats({
-          streak: sessions?.streak_days || 0,
+          streak,
           flashcardsMastered: masteredCount || 0,
-          activeSessions: activeCount || 0
+          activeSessions
         })
       } catch (err) {
         console.error('Error fetching stats:', err)
@@ -67,40 +78,27 @@ export default function StatsBar() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-between px-6 py-2 text-sm">
-        <div className="flex items-center gap-6">
-          <div className="stat-item flex-row gap-2">
-            <Flame className="h-4 w-4 text-accent-purple" />
-            <span className="font-medium">Loading...</span>
-          </div>
-        </div>
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg border animate-pulse">
+        <div className="h-4 w-24 bg-muted rounded"></div>
+        <div className="h-4 w-24 bg-muted rounded"></div>
+        <div className="h-4 w-24 bg-muted rounded"></div>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-2 text-sm">
-      <div className="flex items-center gap-6">
-        <div className="stat-item flex-row gap-2">
-          <Flame className="h-4 w-4 text-accent-purple" />
-          <span className="font-medium">{stats.streak} day streak</span>
-        </div>
-        
-        <div className="stat-item flex-row gap-2">
-          <Star className="h-4 w-4 text-accent-blue" />
-          <span className="font-medium">{stats.flashcardsMastered} cards mastered</span>
-        </div>
-        
-        <div className="stat-item flex-row gap-2">
-          <Bookmark className="h-4 w-4 text-accent-green" />
-          <span className="font-medium">{stats.activeSessions} active sessions</span>
-        </div>
+    <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+      <div className="flex items-center gap-2">
+        <Flame className="h-5 w-5 text-orange-500" />
+        <span className="font-medium">{stats.streak} day streak</span>
       </div>
-      
-      <div>
-        <button className="text-primary hover:underline">
-          Start session
-        </button>
+      <div className="flex items-center gap-2">
+        <Star className="h-5 w-5 text-yellow-500" />
+        <span className="font-medium">{stats.flashcardsMastered} mastered</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Bookmark className="h-5 w-5 text-blue-500" />
+        <span className="font-medium">{stats.activeSessions} active sessions</span>
       </div>
     </div>
   )

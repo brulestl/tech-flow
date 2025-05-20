@@ -25,7 +25,7 @@ describe('SaveModal', () => {
 
   it('renders the modal with all form fields', () => {
     render(<SaveModal isOpen={true} onClose={mockOnClose} />);
-
+    
     expect(screen.getByLabelText(/url/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/type/i)).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('SaveModal', () => {
     (mockGenerateSummary as jest.Mock).mockResolvedValueOnce(mockSummary);
 
     render(<SaveModal isOpen={true} onClose={mockOnClose} />);
-
+    
     const urlInput = screen.getByLabelText(/url/i);
     fireEvent.change(urlInput, { target: { value: 'https://twitter.com/user/status/123' } });
     fireEvent.blur(urlInput);
@@ -146,7 +146,7 @@ describe('SaveModal', () => {
     (mockGenerateSummary as jest.Mock).mockRejectedValueOnce(new Error('AI summary failed'));
 
     render(<SaveModal isOpen={true} onClose={mockOnClose} />);
-
+    
     const urlInput = screen.getByLabelText(/url/i);
     fireEvent.change(urlInput, { target: { value: 'https://example.com/article' } });
     fireEvent.blur(urlInput);
@@ -159,10 +159,10 @@ describe('SaveModal', () => {
 
   it('validates form before submission', async () => {
     render(<SaveModal isOpen={true} onClose={mockOnClose} />);
-
+    
     const submitButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(submitButton);
-
+    
     expect(screen.getByText(/title is required/i)).toBeInTheDocument();
     expect(screen.getByText(/url is required/i)).toBeInTheDocument();
   });
@@ -174,7 +174,7 @@ describe('SaveModal', () => {
     }));
 
     render(<SaveModal isOpen={true} onClose={mockOnClose} />);
-
+    
     // Fill in form
     fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Test Resource' } });
     fireEvent.change(screen.getByLabelText(/url/i), { target: { value: 'https://example.com' } });
@@ -183,7 +183,7 @@ describe('SaveModal', () => {
 
     const submitButton = screen.getByRole('button', { name: /save/i });
     fireEvent.click(submitButton);
-
+    
     await waitFor(() => {
       expect(mockSaveResource).toHaveBeenCalledWith({
         title: 'Test Resource',

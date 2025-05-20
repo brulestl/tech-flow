@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { createBrowserClient } from '@/lib/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 
 const Auth = dynamic(
@@ -18,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     // This block runs only in the browser
-    setSupabase(createBrowserClient());          // returns the silent mock for now
+    setSupabase(createClientComponentClient());
     setRedirectUrl(`${window.location.origin}/`);
     setLoaded(true);
   }, []);

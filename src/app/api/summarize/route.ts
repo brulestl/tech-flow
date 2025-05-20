@@ -24,46 +24,24 @@ async function extractContent(url: string): Promise<string> {
 
 export async function POST(request: Request) {
   try {
-    const { url, title, type } = await request.json()
-
-    // Skip summarization for certain types
-    if (type === 'code' || type === 'other') {
-      return NextResponse.json({ summary: null })
-    }
-
-    let content = ''
-    
-    // Extract content based on type
-    if (type === 'article') {
-      content = await extractContent(url)
-    } else if (type === 'video') {
-      // For videos, we might want to use the video description or metadata
-      // For now, we'll use the title as context
-      content = title
-    }
+    const { content } = await request.json()
 
     if (!content) {
-      return NextResponse.json({ summary: null })
+      return NextResponse.json(
+        { error: 'Content is required' },
+        { status: 400 }
+      )
     }
 
-    // Generate summary using OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant that creates concise, informative summaries. Keep summaries to 1-2 sentences and focus on the key points."
-        },
-        {
-          role: "user",
-          content: `Please summarize this content in 1-2 sentences:\n\n${content}`
-        }
-      ],
-      max_tokens: 150,
-      temperature: 0.7,
+    const prompt = `Summarize the following content in 1-2 sentences: ${content}`
+    
+    const completion = await openai.completions.create({
+      model: 'text-davinci-003',
+      prompt,
+      max_tokens: 60
     })
 
-    const summary = completion.choices[0]?.message?.content || null
+    const summary = completion.choices[0].text.trim()
 
     return NextResponse.json({ summary })
   } catch (error) {

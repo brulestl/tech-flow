@@ -1,4 +1,4 @@
-import { CollectionsGrid } from '@/components/collections/CollectionsGrid'
+import CollectionsGrid from '@/components/collections/CollectionsGrid'
 
 export const metadata = {
   title: 'Collections | TechVault',

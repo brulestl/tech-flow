@@ -3,18 +3,11 @@
 import React, { useEffect, useState } from "react"
 import { BookOpen, Code, Lightbulb, GraduationCap } from "lucide-react"
 import { useRouter } from "next/navigation"
-
-interface Cluster {
-  id: number
-  title: string
-  description: string
-  count: number
-  resourceIds: string[]
-  icon: string
-  color: string
-}
+import { useSupabaseClient } from "@supabase/auth-helpers-react"
+import { kmeans, type Cluster } from "@/lib/kmeans"
 
 export default function ClusterPanel() {
+  const supabase = useSupabaseClient()
   const [clusters, setClusters] = useState<Cluster[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -23,13 +16,45 @@ export default function ClusterPanel() {
   useEffect(() => {
     const fetchClusters = async () => {
       try {
-        const response = await fetch('/api/clusters')
-        if (!response.ok) {
-          throw new Error('Failed to fetch clusters')
+        setIsLoading(true)
+        setError(null)
+        
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) throw userError
+        if (!user) throw new Error('Please connect your social media account to start saving resources')
+
+        const { data: embeddings, error: resourceError } = await supabase
+          .from('resources')
+          .select('embedding')
+          .eq('user_id', user.id)
+
+        if (resourceError) {
+          if (resourceError.code === 'PGRST116') {
+            setError('Please connect your social media account to start saving resources')
+            return
+          }
+          throw resourceError
         }
-        const data = await response.json()
-        setClusters(data.clusters)
+
+        if (!embeddings || embeddings.length === 0) {
+          setClusters([])
+          return
+        }
+
+        // Convert embeddings to number[][]
+        const embeddingArrays = embeddings
+          .filter(e => e.embedding && Array.isArray(e.embedding))
+          .map(e => e.embedding as number[])
+
+        if (embeddingArrays.length === 0) {
+          setClusters([])
+          return
+        }
+
+        const clusters = kmeans(embeddingArrays, 4)
+        setClusters(clusters)
       } catch (err) {
+        console.error('Error fetching clusters:', err)
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setIsLoading(false)
@@ -37,7 +62,7 @@ export default function ClusterPanel() {
     }
 
     fetchClusters()
-  }, [])
+  }, [supabase])
 
   const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -50,7 +75,6 @@ export default function ClusterPanel() {
   }
 
   const handleClusterClick = (cluster: Cluster) => {
-    // Navigate to search page with cluster filter
     router.push(`/search?cluster=${cluster.id}`)
   }
 
@@ -69,8 +93,29 @@ export default function ClusterPanel() {
     return (
       <div className="card p-4">
         <h2 className="text-lg font-medium mb-4">Suggested Clusters</h2>
-        <div className="p-4 bg-destructive/10 text-destructive rounded-md">
-          {error}
+        <div className="text-center py-8">
+          <p className="text-muted-foreground mb-4">{error}</p>
+          {error.includes('connect your social media account') && (
+            <div className="mt-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                To get started, please connect your social media account:
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => supabase.auth.signInWithOAuth({ provider: 'twitter' })}
+                  className="btn btn-outline"
+                >
+                  Connect Twitter
+                </button>
+                <button
+                  onClick={() => supabase.auth.signInWithOAuth({ provider: 'github' })}
+                  className="btn btn-outline"
+                >
+                  Connect GitHub
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -80,9 +125,14 @@ export default function ClusterPanel() {
     return (
       <div className="card p-4">
         <h2 className="text-lg font-medium mb-4">Suggested Clusters</h2>
-        <p className="text-muted-foreground text-center py-8">
-          Add more resources to see suggested clusters
-        </p>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">
+            Add more resources to see suggested clusters
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Clusters are automatically generated based on your saved resources
+          </p>
+        </div>
       </div>
     )
   }

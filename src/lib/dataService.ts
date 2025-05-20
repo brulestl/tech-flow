@@ -1,11 +1,23 @@
 import { supabase } from './supabase';
 import { Database } from './database.types';
+import OpenAI from 'openai';
 
 export type Resource = Database['public']['Tables']['resources']['Row'];
 export type ResourceInsert = Database['public']['Tables']['resources']['Insert'];
 export type Collection = Database['public']['Tables']['collections']['Row'];
 export type CollectionInsert = Database['public']['Tables']['collections']['Insert'];
 export type CollectionWithResourceCount = Collection & { resource_count: number };
+
+// Initialize OpenAI only if API key is available
+const openai = typeof window === 'undefined' && process.env.OPENAI_API_KEY 
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    })
+  : null;
+
+function generateSummaryPrompt(content: string): string {
+  return `Summarize the following content in 1-2 sentences: ${content}`;
+}
 
 export async function saveResource(resource: Omit<ResourceInsert, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'search_vector'>) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -26,6 +38,38 @@ export async function saveResource(resource: Omit<ResourceInsert, 'id' | 'create
   if (error) {
     console.error('Error saving resource:', error);
     throw error;
+  }
+
+  // Use description for summary generation
+  const content = resource.description || '';
+
+  // Generate summary using the API route if content is available
+  if (content) {
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate summary');
+      }
+
+      const { summary } = await response.json();
+
+      if (summary) {
+        // Update resource with summary
+        await supabase
+          .from('resources')
+          .update({ summary })
+          .eq('id', data.id);
+      }
+    } catch (summaryError) {
+      console.error('Error generating summary:', summaryError);
+    }
   }
 
   return data;

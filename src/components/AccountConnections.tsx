@@ -1,158 +1,176 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSupabaseClient, useUser } from '@supabase/auth-helpers-react';
-import { Twitter, Instagram, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
+import { Loader2, Twitter, Github } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { Provider } from '@supabase/supabase-js';
 
-type SocialProvider = 'twitter' | 'instagram';
-
-interface ProviderConnection {
-  provider: SocialProvider;
+interface Connection {
+  platform: string;
   connected: boolean;
   username?: string;
+  icon: React.ReactNode;
 }
 
-interface Identity {
-  provider: string;
-  identity_data: {
-    username?: string;
-    preferred_username?: string;
-  };
-}
-
-function AccountConnections() {
-  const supabase = useSupabaseClient();
-  const user = useUser();
-  const [connections, setConnections] = useState<ProviderConnection[]>([
-    { provider: 'twitter', connected: false },
-    { provider: 'instagram', connected: false },
+const AccountConnections: React.FC = () => {
+  const [connections, setConnections] = useState<Connection[]>([
+    {
+      platform: 'x',
+      connected: false,
+      icon: <Twitter className="h-5 w-5" />
+    },
+    {
+      platform: 'github',
+      connected: false,
+      icon: <Github className="h-5 w-5" />
+    }
   ]);
+  const [connecting, setConnecting] = useState<string | null>(null);
+  const user = useUser();
+  const supabase = useSupabaseClient();
 
   useEffect(() => {
-    checkConnections();
+    if (user) {
+      checkConnections();
+    }
   }, [user]);
 
   const checkConnections = async () => {
     if (!user) return;
 
-    const { data: { user: userData }, error } = await supabase.auth.getUser();
-    
-    if (error) {
-      console.error('Error fetching user identities:', error);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const { data: connections, error } = await supabase
+        .from('user_connections')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setConnections([
+        {
+          platform: 'x',
+          connected: !!connections?.twitter_username,
+          username: connections?.twitter_username,
+          icon: <Twitter className="h-5 w-5" />
+        },
+        {
+          platform: 'github',
+          connected: !!connections?.github_username,
+          username: connections?.github_username,
+          icon: <Github className="h-5 w-5" />
+        }
+      ]);
+    } catch (error) {
+      console.error('Error checking connections:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to check connection status. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleConnect = async (platform: string) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to connect your accounts.',
+        variant: 'destructive',
+      });
       return;
     }
 
-    const identities = userData?.identities as Identity[] | undefined;
-    
-    const updatedConnections = connections.map(conn => {
-      const identity = identities?.find(id => id.provider === conn.provider);
-      return {
-        ...conn,
-        connected: !!identity,
-        username: identity?.identity_data?.username || identity?.identity_data?.preferred_username,
-      };
-    });
-
-    setConnections(updatedConnections);
-  };
-
-  const handleConnect = async (provider: SocialProvider) => {
+    setConnecting(platform);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider as Provider,
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: platform === 'x' ? 'twitter' : 'github',
         options: {
-          redirectTo: `${window.location.origin}/profile`,
-        },
+          redirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+          scopes: platform === 'x' ? 'tweet.read users.read offline.access' : 'read:user user:email'
+        }
       });
 
       if (error) throw error;
     } catch (error) {
-      console.error(`Error connecting to ${provider}:`, error);
+      console.error(`Error connecting ${platform}:`, error);
       toast({
         title: 'Connection Error',
-        description: `Failed to connect to ${provider}. Please try again.`,
+        description: `Failed to connect to ${platform}. Please try again.`,
         variant: 'destructive',
       });
+    } finally {
+      setConnecting(null);
     }
   };
 
-  const handleDisconnect = async (provider: SocialProvider) => {
+  const handleDisconnect = async (platform: string) => {
+    if (!user) return;
+
+    setConnecting(platform);
     try {
-      // Note: This is a placeholder. You'll need to implement the actual disconnect logic
-      // using Supabase Admin API or a custom RPC function
+      const { error } = await supabase
+        .from('user_connections')
+        .update({
+          [`${platform}_username`]: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await checkConnections();
       toast({
-        title: 'Disconnect Not Implemented',
-        description: 'The disconnect functionality needs to be implemented with Supabase Admin API.',
-        variant: 'destructive',
+        title: 'Success',
+        description: `Successfully disconnected from ${platform}.`,
       });
     } catch (error) {
-      console.error(`Error disconnecting from ${provider}:`, error);
+      console.error(`Error disconnecting from ${platform}:`, error);
       toast({
-        title: 'Disconnection Error',
-        description: `Failed to disconnect from ${provider}. Please try again.`,
+        title: 'Error',
+        description: `Failed to disconnect from ${platform}. Please try again.`,
         variant: 'destructive',
       });
-    }
-  };
-
-  const getProviderIcon = (provider: SocialProvider) => {
-    switch (provider) {
-      case 'twitter':
-        return <Twitter className="h-5 w-5" />;
-      case 'instagram':
-        return <Instagram className="h-5 w-5" />;
-    }
-  };
-
-  const getProviderName = (provider: SocialProvider) => {
-    switch (provider) {
-      case 'twitter':
-        return 'Twitter';
-      case 'instagram':
-        return 'Instagram';
+    } finally {
+      setConnecting(null);
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Connected Accounts</CardTitle>
+        <h2 className="text-xl font-semibold">Connected Accounts</h2>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {connections.map((connection) => (
-            <div
-              key={connection.provider}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                {getProviderIcon(connection.provider)}
+            <div key={connection.platform} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                {connection.icon}
                 <div>
-                  <p className="font-medium">{getProviderName(connection.provider)}</p>
-                  {connection.connected ? (
-                    <div className="flex items-center space-x-1 text-sm text-green-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>Connected as @{connection.username}</span>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Not connected</p>
+                  <h3 className="font-medium capitalize">{connection.platform}</h3>
+                  {connection.username && (
+                    <p className="text-sm text-muted-foreground">@{connection.username}</p>
                   )}
                 </div>
               </div>
               <Button
                 variant={connection.connected ? "outline" : "default"}
-                className={connection.connected ? "text-red-600 hover:text-red-700 hover:bg-red-50" : ""}
-                onClick={() =>
-                  connection.connected
-                    ? handleDisconnect(connection.provider)
-                    : handleConnect(connection.provider)
-                }
+                onClick={() => connection.connected ? handleDisconnect(connection.platform) : handleConnect(connection.platform)}
+                disabled={connecting === connection.platform}
+                className={connection.connected ? "text-green-600 border-green-600 hover:bg-green-50" : ""}
               >
-                {connection.connected ? 'Disconnect' : 'Connect'}
+                {connecting === connection.platform ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                {connection.connected ? 'Connected' : 'Connect Account'}
               </Button>
             </div>
           ))}
@@ -160,6 +178,6 @@ function AccountConnections() {
       </CardContent>
     </Card>
   );
-}
+};
 
 export default AccountConnections; 
