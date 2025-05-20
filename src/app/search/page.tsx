@@ -1,20 +1,10 @@
-import React from "react"
-import { Suspense } from "react"
-import SearchPage from "./SearchPage"
+import SearchPage from '@/components/search/SearchPage'
 
-export default function Page() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Search</h1>
-        <p className="text-muted-foreground">
-          Find resources by keywords, tags, or content
-        </p>
-      </div>
-      
-      <Suspense fallback={<div>Loading search results...</div>}>
-        <SearchPage />
-      </Suspense>
-    </div>
-  )
+export const metadata = {
+  title: 'Search | TechVault',
+  description: 'Search your knowledge base',
+}
+
+export default function Search() {
+  return <SearchPage />
 }

@@ -27,7 +27,7 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   
   const links = [
-    { href: "/", icon: <Home size={20} />, label: "Home" },
+    { href: "/home", icon: <Home size={20} />, label: "Home" },
     { href: "/recents", icon: <Clock size={20} />, label: "Recents" },
     { href: "/search", icon: <Search size={20} />, label: "Search" },
     { href: "/collections", icon: <FolderOpen size={20} />, label: "Collections" },
@@ -35,8 +35,8 @@ export default function Sidebar() {
   ]
 
   const secondaryLinks = [
-    { href: "/bookmarks", icon: <Bookmark size={20} />, label: "Saved" },
-    { href: "/code", icon: <Code size={20} />, label: "Code Snippets" },
+    { href: "/saved", icon: <Bookmark size={20} />, label: "Saved" },
+    { href: "/code-snippets", icon: <Code size={20} />, label: "Code Snippets" },
     { href: "/settings", icon: <Settings size={20} />, label: "Settings" }
   ]
 

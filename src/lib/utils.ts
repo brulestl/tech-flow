@@ -1,9 +1,22 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { nanoid } from 'nanoid'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+export function stringToColor(str: string) {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  let color = '#'
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF
+    color += ('00' + value.toString(16)).substr(-2)
+  }
+  return color
 }
 
 // Resource types
@@ -53,51 +66,43 @@ export interface UserProfile {
 // Local storage helpers
 const STORAGE_PREFIX = 'techvault_';
 
-export function getFromStorage<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') return defaultValue;
-  
+export function getFromStorage<T>(key: string): T | null {
   try {
-    // Safe access to localStorage after window check
-    const storage = typeof window !== 'undefined' ? window.localStorage : null;
-    const item = storage?.getItem(`${STORAGE_PREFIX}${key}`);
-    return item ? (JSON.parse(item) as T) : defaultValue;
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : null;
   } catch (error) {
-    console.error(`Error getting from storage: ${key}`, error);
-    return defaultValue;
+    console.error('Error reading from storage:', error);
+    return null;
   }
 }
 
 export function setToStorage<T>(key: string, value: T): void {
-  if (typeof window === 'undefined') return;
-  
   try {
-    // Safe access to localStorage after window check
-    const storage = typeof window !== 'undefined' ? window.localStorage : null;
-    storage?.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error(`Error setting to storage: ${key}`, error);
+    console.error('Error writing to storage:', error);
   }
 }
 
 // Data management functions
 export function saveResource(resource: Omit<Resource, 'id' | 'dateAdded'>): Resource {
+  const resources = getFromStorage<Resource[]>('resources') || [];
   const newResource: Resource = {
     ...resource,
-    id: nanoid(),
+    id: crypto.randomUUID(),
     dateAdded: new Date().toISOString(),
   };
   
-  const resources = getFromStorage<Resource[]>('resources', []);
-  setToStorage('resources', [...resources, newResource]);
-  
+  resources.push(newResource);
+  setToStorage('resources', resources);
   return newResource;
 }
 
 export function getResources(): Resource[] {
-  return getFromStorage<Resource[]>('resources', []);
+  return getFromStorage<Resource[]>('resources') || [];
 }
 
-export function getRecentResources(limit = 10): Resource[] {
+export function getRecentResources(limit: number = 10): Resource[] {
   const resources = getResources();
   return resources
     .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
@@ -105,26 +110,27 @@ export function getRecentResources(limit = 10): Resource[] {
 }
 
 export function getResourcesByTags(tags: string[]): Resource[] {
-  if (tags.length === 0) return [];
-  
   const resources = getResources();
-  return resources.filter(resource => 
-    tags.some(tag => resource.tags.includes(tag))
+  return resources.filter(resource =>
+    tags.every(tag => resource.tags.includes(tag))
   );
 }
 
 export function searchResources(query: string): Resource[] {
   if (!query) return [];
   
-  const lowerQuery = query.toLowerCase();
   const resources = getResources();
+  const searchTerms = query.toLowerCase().split(' ');
   
-  return resources.filter(resource => 
-    resource.title.toLowerCase().includes(lowerQuery) ||
-    resource.tags.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-    (resource.summary && resource.summary.toLowerCase().includes(lowerQuery)) ||
-    (resource.notes && resource.notes.toLowerCase().includes(lowerQuery))
-  );
+  return resources.filter(resource => {
+    const searchableText = [
+      resource.title,
+      resource.summary,
+      resource.tags.join(' '),
+    ].join(' ').toLowerCase();
+    
+    return searchTerms.every(term => searchableText.includes(term));
+  });
 }
 
 // Format date for display
@@ -223,15 +229,4 @@ export function generateMockData(): void {
   };
   
   setToStorage('profile', profile);
-}
-
-// Generate simple color from string (for tags, etc)
-export function stringToColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  const hue = hash % 360;
-  return `hsl(${hue}, 70%, 60%)`;
 }

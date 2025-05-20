@@ -1,112 +1,182 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { getFromStorage, Collection, generateMockData } from "@/lib/utils"
+import { CollectionWithResourceCount, getCollections, deleteCollection } from "@/lib/dataService"
 import { motion } from "framer-motion"
-import { 
-  FolderOpen, 
-  Code, 
-  Paintbrush, 
-  Server, 
-  BarChart, 
-  Layout, 
-  BookOpen 
-} from "lucide-react"
+import { Folder, Plus, MoreVertical, Edit, Trash2 } from "lucide-react"
+import Link from "next/link"
+import NewCollectionModal from "@/components/collections/NewCollectionModal"
 
 export default function CollectionsGrid() {
-  const [collections, setCollections] = useState<Collection[]>([])
+  const [collections, setCollections] = useState<CollectionWithResourceCount[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showNewModal, setShowNewModal] = useState(false)
+  const [showDropdown, setShowDropdown] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   
-  useEffect(() => {
-    // Generate mock data if none exists
-    generateMockData()
-    
-    const storedCollections = getFromStorage<Collection[]>('collections', [])
-    setCollections(storedCollections)
-  }, [])
-  
-  const getIconComponent = (iconName?: string) => {
-    switch (iconName) {
-      case 'code': return <Code size={24} />;
-      case 'paintbrush': return <Paintbrush size={24} />;
-      case 'server': return <Server size={24} />;
-      case 'chart': return <BarChart size={24} />;
-      case 'layout': return <Layout size={24} />;
-      case 'book': return <BookOpen size={24} />;
-      default: return <FolderOpen size={24} />;
+  const loadCollections = async () => {
+    try {
+      setIsLoading(true)
+      const data = await getCollections()
+      setCollections(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load collections')
+    } finally {
+      setIsLoading(false)
     }
   }
   
-  const templates = [
-    { name: "UI Components", icon: "layout", color: "var(--accent-purple)" },
-    { name: "Architecture", icon: "server", color: "var(--accent-blue)" },
-    { name: "Learning Path", icon: "book", color: "var(--accent-green)" },
-    { name: "Analytics", icon: "chart", color: "var(--accent-cyan)" },
-  ]
+  useEffect(() => {
+    loadCollections()
+  }, [])
+  
+  const handleDelete = async (collection: CollectionWithResourceCount) => {
+    if (!confirm('Are you sure you want to delete this collection?')) return
+    
+    try {
+      await deleteCollection(collection.id)
+      setCollections(prev => prev.filter(c => c.id !== collection.id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete collection')
+    }
+  }
+
+  const handleCollectionCreated = () => {
+    loadCollections()
+    setSuccessMessage('Collection created successfully')
+    setTimeout(() => setSuccessMessage(null), 3000)
+  }
+  
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin text-2xl">⟳</div>
+      </div>
+    )
+  }
+  
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg text-destructive mb-2">Error loading collections</p>
+        <p className="text-muted-foreground">{error}</p>
+      </div>
+    )
+  }
   
   return (
-    <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {collections.map((collection) => (
-          <motion.div
-            key={collection.id}
-            className="card p-5 cursor-pointer"
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-md bg-accent flex items-center justify-center text-primary">
-                {getIconComponent(collection.icon)}
-              </div>
-              <div>
-                <h3 className="font-medium text-lg">{collection.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {collection.resources.length} resources
-                </p>
-              </div>
-            </div>
-            
-            {collection.description && (
-              <p className="text-sm text-muted-foreground mb-3">
-                {collection.description}
-              </p>
-            )}
-            
-            <div className="mt-4 pt-3 border-t border-border flex justify-between text-sm text-muted-foreground">
-              <span>Updated {new Date(collection.dateModified).toLocaleDateString()}</span>
-              <button className="text-primary hover:underline">View</button>
-            </div>
-          </motion.div>
-        ))}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {collections.length} collections
+        </p>
+        
+        <button 
+          className="btn btn-primary flex items-center gap-2"
+          onClick={() => setShowNewModal(true)}
+        >
+          <Plus size={18} />
+          New Collection
+        </button>
       </div>
+
+      {successMessage && (
+        <div className="p-3 bg-green-500/10 text-green-500 rounded-md text-sm">
+          {successMessage}
+        </div>
+      )}
       
-      {/* Templates section */}
-      <div className="mt-10">
-        <h2 className="text-xl font-bold mb-4">Collection Templates</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {templates.map((template, index) => (
-            <motion.div
-              key={index}
-              className="card p-4 cursor-pointer border border-dashed"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="flex flex-col items-center text-center p-4">
-                <div 
-                  className="p-2 rounded-md mb-3" 
-                  style={{ 
-                    backgroundColor: `${template.color}20`,
-                    color: template.color
+      {collections.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {collections.map(collection => (
+            <div key={collection.id} className="relative">
+              <Link 
+                href={`/collections/${collection.id}`}
+                className="block"
+              >
+                <motion.div 
+                  className="card p-5 hover:bg-accent/50 transition-colors"
+                  whileHover={{ y: -2 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Folder size={24} className="text-primary" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-base truncate">
+                        {collection.name}
+                      </h3>
+                      
+                      {collection.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                          {collection.description}
+                        </p>
+                      )}
+                      
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {collection.resource_count} {collection.resource_count === 1 ? 'resource' : 'resources'}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+              
+              <div className="absolute top-2 right-2">
+                <button
+                  className="p-1.5 rounded-md hover:bg-accent"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setShowDropdown(showDropdown === collection.id ? null : collection.id)
                   }}
                 >
-                  {getIconComponent(template.icon)}
-                </div>
-                <h3 className="font-medium">{template.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">Start with pre-configured structure</p>
+                  <MoreVertical size={16} />
+                </button>
+                
+                {showDropdown === collection.id && (
+                  <div className="absolute right-0 mt-1 w-48 bg-card rounded-md shadow-lg border border-border z-10">
+                    <div className="py-1">
+                      <Link
+                        href={`/collections/${collection.id}/edit`}
+                        className="w-full px-4 py-2 text-sm text-left hover:bg-accent flex items-center gap-2"
+                        onClick={() => setShowDropdown(null)}
+                      >
+                        <Edit size={16} />
+                        Edit Collection
+                      </Link>
+                      <button
+                        className="w-full px-4 py-2 text-sm text-left hover:bg-accent flex items-center gap-2 text-destructive"
+                        onClick={() => {
+                          setShowDropdown(null)
+                          handleDelete(collection)
+                        }}
+                      >
+                        <Trash2 size={16} />
+                        Delete Collection
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-lg text-muted-foreground mb-2">No collections yet</p>
+          <p className="text-muted-foreground">
+            Create your first collection to organize your resources
+          </p>
+        </div>
+      )}
+      
+      <NewCollectionModal
+        open={showNewModal}
+        onOpenChange={setShowNewModal}
+        onSuccess={handleCollectionCreated}
+      />
     </div>
   )
 }

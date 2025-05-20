@@ -1,17 +1,11 @@
-import React from "react"
-import ProfileContent from "./ProfileContent"
+import { Metadata } from 'next';
+import ProfileContent from '@/components/profile/ProfileContent';
+
+export const metadata: Metadata = {
+  title: 'Profile | TechVault',
+  description: 'Manage your profile and connected accounts',
+};
 
 export default function ProfilePage() {
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Profile</h1>
-        <p className="text-muted-foreground">
-          Manage your profile and preferences
-        </p>
-      </div>
-      
-      <ProfileContent />
-    </div>
-  )
+  return <ProfileContent />;
 }
